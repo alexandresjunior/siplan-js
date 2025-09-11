@@ -1,8 +1,15 @@
 import { FaCircleUser } from "react-icons/fa6";
 import logo from "../../assets/imagens/siplan_logo_azul.png";
+import { useNavigate } from "react-router-dom";
 import './estilos.css';
 
 export function Cabecalho() {
+    const navigate = useNavigate();
+
+    const fazerLogout = () => {
+        navigate('/');
+    }
+
     return (
         <>
             <nav className="navbar navbar-expand-lg bg-primary py-lg-0 py-3">
@@ -18,7 +25,9 @@ export function Cabecalho() {
                     >
                         <span className="navbar-toggler-icon"></span>
                     </button>
-                    <img src={logo} alt="SIPLAN" width="120px" />
+                    <a href="/dashboard">
+                        <img src={logo} alt="SIPLAN" width="120px" />
+                    </a>
                     <div className="collapse navbar-collapse" id="navbarToggler">
                         <ul className="navbar-nav me-auto p-3 mb-lg-0">
                             <li className="nav-item dropdown">
@@ -76,7 +85,7 @@ export function Cabecalho() {
                                         <div className="d-flex justify-content-center align-items-center flex-column mx-3 my-2">
                                             <div className="d-grid align-items-center fw-semibold">Usuário:</div>
                                             <div className="mb-2">Alexandre Junior</div>
-                                            <button className="btn btn-sm btn-danger fw-semibold w-100">SAIR</button>
+                                            <button className="btn btn-sm btn-danger fw-semibold w-100" onClick={fazerLogout}>SAIR</button>
                                         </div>
                                     </ul>
                                 </a>

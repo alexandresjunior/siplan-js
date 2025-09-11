@@ -1,10 +1,10 @@
-import GraficoIndicador from '../GraficoIndicador';
-import checkIcon from '../../assets/imagens/icon-check.svg';
-import alertIcon from '../../assets/imagens/icon-alert.svg';
-import closeIcon from '../../assets/imagens/icon-close.svg';
-import starIcon from '../../assets/imagens/icon-star.svg';
-import './estilos.css';
+import checkIcon from '../../../assets/imagens/icon-check.svg';
+import alertIcon from '../../../assets/imagens/icon-alert.svg';
+import closeIcon from '../../../assets/imagens/icon-close.svg';
+import starIcon from '../../../assets/imagens/icon-star.svg';
 import { FaArrowCircleUp } from 'react-icons/fa';
+import GraficoIndicador from '../GraficoIndicador';
+import './estilos.css';
 
 const getStatusIcon = (value) => {
     if (value < 95) {
