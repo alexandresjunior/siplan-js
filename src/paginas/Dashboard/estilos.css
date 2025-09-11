@@ -1,0 +1,27 @@
+.dashboard-container {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+.kpi-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 40px;
+}
+
+.kpi-card {
+    width: 350px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+}
+
+.kpi-card h2 {
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    color: #333;
+}

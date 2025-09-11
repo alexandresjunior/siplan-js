@@ -1,0 +1,13 @@
+.nav-link {
+    color: white !important;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--verde-compesa);
+}
+
+.nav-link.active,
+.nav-link.show {
+    color: var(--verde-compesa);
+}

@@ -1,3 +1,42 @@
-        body {
-           font-family: "Open Sans", sans-serif;
-        }
+:root {
+   --azul-compesa: rgb(33, 64, 154);
+   --verde-compesa: rgb(141, 198, 63);
+   --cinza-compesa: rgb(126, 128, 131);
+}
+
+.bg-azul-compesa {
+   background-color: var(--azul-compesa) !important;
+}
+
+.bg-verde-compesa {
+   background-color: var(--verde-compesa) !important;
+}
+
+.btn-primary {
+   background-color: var(--azul-compesa) !important;
+   border-color: var(--azul-compesa) !important;
+   color: #FFF !important;
+}
+
+.btn-primary:hover {
+   background-color: var(--verde-compesa) !important;
+   color: #FFF !important;
+   border-color: var(--verde-compesa) !important;
+}
+
+.btn-primary:disabled:hover {
+   background-color: var(--azul-compesa) !important;
+   color: #FFF !important;
+   border-color: var(--azul-compesa) !important;
+}
+
+.btn-primary:active {
+   background-color: var(--cinza-compesa) !important;
+   color: #FFF !important;
+   border-color: var(--cinza-compesa) !important;
+}
+
+html,
+body {
+   height: 100%;
+}
