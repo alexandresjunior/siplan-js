@@ -1,5 +1,4 @@
-// Dados extraídos das imagens "Plano de Metas"
-export const dadosMensal = [
+export const DADOS_MENSAL = [
     {
         id: 1,
         titulo: "Arrecadação",
@@ -49,7 +48,7 @@ export const dadosMensal = [
     },
 ];
 
-export const dadosAcumulado = [
+export const DADOS_ACUMULADO = [
     {
         id: 6,
         titulo: "IUA",
@@ -104,5 +103,15 @@ export const dadosAcumulado = [
         real: "351,69",
         kpi: 117,
         metaUnidade: "l/dia/ligação Trimestral",
+    },
+    {
+        id: 12,
+        titulo: "TMA",
+        subtitulo: "Tempo Médio de Abastecimento",
+        periodo: "Jan-Jul 2025",
+        meta: "0",
+        real: "0",
+        kpi: 0,
+        metaUnidade: "dias",
     },
 ];

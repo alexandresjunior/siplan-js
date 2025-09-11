@@ -1,6 +1,6 @@
 .link-rodape {
     text-decoration: none;
-    color: #000;
+    color: var(--azul-compesa);
 }
 
 .link-rodape:hover {

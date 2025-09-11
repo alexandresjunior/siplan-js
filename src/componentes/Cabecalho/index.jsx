@@ -5,31 +5,65 @@ import './estilos.css';
 export function Cabecalho() {
     return (
         <>
-            <nav className="navbar navbar-expand-lg bg-azul-compesa py-1">
+            <nav className="navbar navbar-expand-lg bg-primary py-lg-0 py-3">
                 <div className="container">
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler"
-                        aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <button
+                        className="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarToggler"
+                        aria-controls="navbarToggler"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation"
+                    >
                         <span className="navbar-toggler-icon"></span>
                     </button>
                     <img src={logo} alt="SIPLAN" width="120px" />
                     <div className="collapse navbar-collapse" id="navbarToggler">
-                        <ul className="navbar-nav me-auto mb-2 p-3 mb-lg-0">
+                        <ul className="navbar-nav me-auto p-3 mb-lg-0">
                             <li className="nav-item dropdown">
                                 <a className="nav-link dropdown-toggle fw-semibold" id="dropdownMenuButton" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Arquivo
+                                    Cadastros
                                 </a>
                                 <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <li><button className="dropdown-item">Novo Arquivo</button></li>
-                                    <li><button className="dropdown-item">Abrir JSON</button></li>
+                                    <li><button className="dropdown-item">Indicadores</button></li>
+                                    <li><button className="dropdown-item">Valores dos Indicadores</button></li>
+                                    <li><button className="dropdown-item">Transferência de Valores</button></li>
+                                    <li><button className="dropdown-item">Ata de Reuniões</button></li>
+                                    <li><button className="dropdown-item">Comitês</button></li>
+                                    <li><button className="dropdown-item">Objetivos</button></li>
                                 </ul>
                             </li >
                             <li className="nav-item dropdown">
                                 <a className="nav-link dropdown-toggle fw-semibold" id="dropdownMenuButton" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Ferramentas
+                                    Configurações
                                 </a>
                                 <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <li><button className="dropdown-item">Novo Arquivo</button></li>
-                                    <li><button className="dropdown-item">Abrir JSON</button></li>
+                                    <li><button className="dropdown-item">Importação de Dados</button></li>
+                                    <li><button className="dropdown-item">Controle de Acesso</button></li>
+                                    <li><button className="dropdown-item">PDF de Indicadores</button></li>
+                                    <li><button className="dropdown-item">PDF de Pareto</button></li>
+                                    <li><button className="dropdown-item">Resumos do Ciclo</button></li>
+                                    <li><button className="dropdown-item">Lixeira de Indicadores</button></li>
+                                </ul>
+                            </li>
+                            <li className="nav-item dropdown">
+                                <a className="nav-link dropdown-toggle fw-semibold" id="dropdownMenuButton" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Análise
+                                </a>
+                                <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li><button className="dropdown-item">Indicadores</button></li>
+                                    <li><button className="dropdown-item">Pareto</button></li>
+                                </ul>
+                            </li>
+                            <li className="nav-item dropdown">
+                                <a className="nav-link dropdown-toggle fw-semibold" id="dropdownMenuButton" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Aderência
+                                </a>
+                                <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li><button className="dropdown-item">Verificação</button></li>
+                                    <li><button className="dropdown-item">Data de Fechamento</button></li>
+                                    <li><button className="dropdown-item">Calendário de Reuniões</button></li>
                                 </ul>
                             </li>
                         </ul>

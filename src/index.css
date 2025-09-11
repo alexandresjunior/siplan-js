@@ -4,11 +4,11 @@
    --cinza-compesa: rgb(126, 128, 131);
 }
 
-.bg-azul-compesa {
+.bg-primary {
    background-color: var(--azul-compesa) !important;
 }
 
-.bg-verde-compesa {
+.bg-secondary {
    background-color: var(--verde-compesa) !important;
 }
 
@@ -34,6 +34,10 @@
    background-color: var(--cinza-compesa) !important;
    color: #FFF !important;
    border-color: var(--cinza-compesa) !important;
+}
+
+.text-primary {
+   color: var(--azul-compesa) !important;
 }
 
 html,

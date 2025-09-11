@@ -1,34 +1,28 @@
 import Cabecalho from "../../componentes/Cabecalho";
-import GraficoIndicador from "../../componentes/GraficoIndicador";
+import CartaoIndicador from "../../componentes/CartaoIndicador";
 import { Rodape } from "../../componentes/Rodape";
+import { DADOS_ACUMULADO, DADOS_MENSAL } from "../../mocks/api";
 import './estilos.css';
 
 export function Dashboard() {
-    const kpiRiscoOperacional = 45;
-    const kpiSatisfacaoCliente = 82;
-    const kpiPerformanceServidor = 15;
-
     return (
         <>
             <Cabecalho />
 
-            <section id='mapa-estrategico' className="container">
-                <div className="dashboard-container">
-                    <h1>Dashboard de KPIs</h1>
-                    <div className="kpi-grid">
-                        <div className="kpi-card">
-                            <h2>Risco Operacional</h2>
-                            <GraficoIndicador value={kpiRiscoOperacional} />
-                        </div>
-                        <div className="kpi-card">
-                            <h2>Satisfação do Cliente</h2>
-                            <GraficoIndicador value={kpiSatisfacaoCliente} />
-                        </div>
-                        <div className="kpi-card">
-                            <h2>Performance do Servidor</h2>
-                            <GraficoIndicador value={kpiPerformanceServidor} />
-                        </div>
-                    </div>
+            <section className="container mt-3 mb-5">
+                <h1 className="text-primary">Plano de Metas (7º Ciclo)</h1>
+                <h2 className="text-primary">Mensal (Julho/2025)</h2>
+                <div className="kpi-grid">
+                    {DADOS_MENSAL.map(kpi => (
+                        <CartaoIndicador key={kpi.id} data={kpi} />
+                    ))}
+                </div>
+
+                <h2 className="text-primary">Acumulado</h2>
+                <div className="kpi-grid">
+                    {DADOS_ACUMULADO.map(kpi => (
+                        <CartaoIndicador key={kpi.id} data={kpi} />
+                    ))}
                 </div>
             </section>
 
