@@ -7,12 +7,37 @@ import "./login.css";
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [erro, setErro] = useState("");
 
   const navigate = useNavigate();
 
-  const enviarFormulario = () => {
-    console.log({ username, password });
-    navigate("/dashboard");
+  const enviarFormulario = async () => {
+
+    try {
+      const response = await fetch("http://localhost:8098/authenticate/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          login: username,
+          senha: password,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Resposta da API:", data);
+
+      if (data.sucesso) {
+        localStorage.setItem("token", data.objeto);
+
+        navigate("/dashboard");
+      } else {
+        setErro(data.mensagem || "Falha na autenticação");
+      }
+    } catch (error) {
+      setErro("Erro de conexão com o servidor");
+    }
   };
 
   return (
@@ -22,12 +47,14 @@ function Login() {
 
         <p className="text-center texto-credencial">Insira suas credenciais de rede</p>
 
+        {erro && <div className="alert alert-danger">{erro}</div>}
+
         <div className="row g-3 align-items-center mb-5">
           <div className="col-12">
             <input
               type="text"
               className="form-control"
-              id="username"
+              id="usuario"
               placeholder="Usuário"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -48,13 +75,17 @@ function Login() {
           </div>
         </div>
 
-        <button type="button" className="btn btn-primary" onClick={enviarFormulario}>
+        <button type="button" class="btn btn-primary" onClick={enviarFormulario}>
           ENTRAR
         </button>
 
-        <img src={logoCompesa} alt="COMPESA" width="80px" />
+
+        <img src={logoCompesa} alt="Compesa" width="80" />
+
       </div>
+
     </div>
   );
 }
+
 export default Login;
