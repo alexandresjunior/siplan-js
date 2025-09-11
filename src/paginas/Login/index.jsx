@@ -4,7 +4,6 @@ import logoCompesa from "../../assets/imagens/compesa_logo.png";
 import { useNavigate } from "react-router-dom";
 import "./login.css";
 
-
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -13,23 +12,22 @@ function Login() {
 
   const enviarFormulario = () => {
     console.log({ username, password });
-    navigate("/home");
+    navigate("/dashboard");
   };
 
   return (
     <div className="bg-container">
       <div className="container login-container col-12 col-sm-8 col-md-6 col-lg-3">
-        <img src={logoSiplan} alt="SIPLAN" width="200" />
+        <img src={logoSiplan} alt="SIPLAN" width="200px" />
 
-        <p class="text-center texto-credencial">Insira suas credenciais de rede</p>
-
+        <p className="text-center texto-credencial">Insira suas credenciais de rede</p>
 
         <div className="row g-3 align-items-center mb-5">
           <div className="col-12">
             <input
               type="text"
               className="form-control"
-              id="exampleFormControlInput1"
+              id="username"
               placeholder="Usuário"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -41,9 +39,8 @@ function Login() {
           <div className="col-12">
             <input
               type="password"
-              id="inputPassword6"
+              id="senha"
               className="form-control"
-              aria-describedby="passwordHelpInline"
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -51,13 +48,11 @@ function Login() {
           </div>
         </div>
 
-        <button type="button" class="btn btn-primary" onClick={enviarFormulario}>
+        <button type="button" className="btn btn-primary" onClick={enviarFormulario}>
           ENTRAR
         </button>
 
-
-        <img src={logoCompesa} alt="Compesa" width="80" />
-
+        <img src={logoCompesa} alt="COMPESA" width="80px" />
       </div>
     </div>
   );
