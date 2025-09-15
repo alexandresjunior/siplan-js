@@ -11,9 +11,10 @@ function Login() {
   const [erro, setErro] = useState("");
 
   const navigate = useNavigate();
+  const { login } = loginService; //desestrutura função login
 
   const handleSubmit = () => {
-    loginService(username, password, navigate, setErro);
+    login(username, password, navigate, setErro);
   };
 
   return (

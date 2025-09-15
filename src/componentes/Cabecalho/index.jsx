@@ -1,6 +1,7 @@
 import { FaCircleUser } from "react-icons/fa6";
 import logo from "../../assets/imagens/siplan_logo_azul.png";
 import { useNavigate, Link } from "react-router-dom";
+import loginService from "../../service/loginService";
 import './estilos.css';
 
 const menuItems = [
@@ -45,10 +46,8 @@ const menuItems = [
 
 export function Cabecalho() {
     const navigate = useNavigate();
+    const { logout } = loginService; //desestrutura função logout
 
-    const fazerLogout = () => {
-        navigate('/');
-    }
 
     const handleDropdownClick = (e) => e.preventDefault();
 
@@ -101,7 +100,7 @@ export function Cabecalho() {
                                     <div className="d-flex justify-content-center align-items-center flex-column mx-3 my-2">
                                         <div className="fw-semibold">Usuário:</div>
                                         <div className="mb-2">Alexandre Junior</div>
-                                        <button className="btn btn-sm btn-danger fw-semibold w-100" onClick={fazerLogout}>SAIR</button>
+                                        <button className="btn btn-sm btn-danger fw-semibold w-100" onClick={() => logout(navigate)}>SAIR</button>
                                     </div>
                                 </li>
                             </ul>

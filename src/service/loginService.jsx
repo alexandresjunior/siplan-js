@@ -48,4 +48,15 @@ async function loginService(username, password, navigate, setErro) {
   }
 }
 
-export default loginService;
+function fazerLogout(navigate) {
+  //remove token do localStorage:
+  localStorage.removeItem("token");
+
+  //remove o cabeçalho Authorization das configurações do Axios:
+  delete axios.defaults.headers.common["Authorization"];
+
+  //redireciona pra tela de login:
+  navigate("/");
+}
+
+export default {login: loginService, logout: fazerLogout};
