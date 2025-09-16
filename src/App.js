@@ -3,6 +3,7 @@ import Dashboard from './paginas/Dashboard';
 import Login from './paginas/Login';
 import './App.css';
 import Indicadores from "./paginas/Cadastros/Indicadores";
+import Usuario from './paginas/Usuario/UsuariosCadastrados';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path ="/cadastros/usuarioscadastrados" element={<Usuario />} />
         <Route path="/cadastros/indicadores" element={<Indicadores />} />
         <Route path="/cadastros/valores-indicadores" element={<></>} />
         <Route path="/cadastros/transferencia-valores" element={<></>} />
