@@ -11,7 +11,7 @@ function Login() {
   const [erro, setErro] = useState("");
 
   const navigate = useNavigate();
-  const { login } = loginService; //desestrutura função login
+  const { login } = loginService; 
 
   const handleSubmit = () => {
     login(username, password, navigate, setErro);
