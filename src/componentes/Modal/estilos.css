@@ -1,0 +1,9 @@
+.modal-header .btn-outline-primary:hover {
+  background-color: var(--verde-compesa) !important; 
+  color: #ffffff !important; 
+  border-color: var(--verde-compesa) !important; 
+}
+
+.modal-header .btn:not(.btn-outline-primary):hover {
+  background-color: inherit; 
+}

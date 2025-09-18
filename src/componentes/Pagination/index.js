@@ -1,3 +1,5 @@
+import "../Pagination/estilos.css";
+
 const MAX_BUTTONS = 5;
 
 const Pagination = ({
@@ -30,7 +32,7 @@ const Pagination = ({
             visiblePages.map((pageNumber) => (
               <li key={pageNumber} className="page-item">
                 <button
-                  className={`page-link ${pageNumber === page + 1 && "active"}`}
+                  className={`page-link ${pageNumber === page + 1 && "active"} custom-page-link`}
                   onClick={() => setPage(pageNumber - 1)}
                   style={{
                     borderRadius: "50%",
@@ -40,8 +42,8 @@ const Pagination = ({
                     alignItems: "center",
                     justifyContent: "center",
                     margin: "0 2px",
-                    backgroundColor: pageNumber === page + 1 ? "var(--azul-compesa)" : "transparent", // Aplica a cor apenas no ativo
-                    color: pageNumber === page + 1 ? "#ffffffff" : "var(--azul-compesa)", // Texto branco no ativo, azul no inativo
+                    backgroundColor: pageNumber === page + 1 ? "var(--azul-compesa)" : "transparent",
+                    color: pageNumber === page + 1 ? "#ffffff" : "var(--azul-compesa)",
                     border: "1px solid var(--azul-compesa)"
                   }}
                 >

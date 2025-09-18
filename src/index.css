@@ -36,6 +36,12 @@
    border-color: var(--cinza-compesa) !important;
 }
 
+.btn-outline-primary {
+   background-color: #FFF !important;
+   border-color: var(--azul-compesa) !important;
+   color: var(--azul-compesa) !important;
+}
+
 .text-primary {
    color: var(--azul-compesa) !important;
 }
