@@ -1,16 +1,18 @@
 import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal"; // Import do Modal genérico (coringa)
 import { AiOutlineDelete } from 'react-icons/ai'; // Importação do ícone de lixeira
+import { fetchIndicadores, fetchUsers } from "../../../service/usuariosCadastradosService";
 
-// URL base da API
+// URL base da API (mantidas como constantes no componente por conveniência)
 const API_URL = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const UPDATE_USER_URL = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const USER_BY_ID_URL = 'http://localhost:8098/usuariosip/obterporid'; // Endpoint para obter usuário por ID
 const INDICADORES_URL = 'http://localhost:8098/usuariosip/indicadores'; // Endpoint para indicadores 
 const DELETE_USER_URL = 'http://localhost:8098/usuariosip/obterporid'; // Placeholder para exclusão
+
 function Usuario() {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -21,145 +23,42 @@ function Usuario() {
   const [showIndicadoresModal, setShowIndicadoresModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [indicadores, setIndicadores] = useState([]); // Estado para armazenar indicadores dinamicamente
+  const scrollPosition = useRef(0); // Referência para armazenar a posição de rolagem
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          console.warn('Nenhum token encontrado. Redirecione para login.');
-          alert('Você precisa estar logado para acessar esta página.');
-          return;
-        }
-        const response = await fetch(`${API_URL}?page=${currentPage}&size=${pageSize}&sort=nome,asc`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Erro HTTP: ${response.status} - ${errorText}`);
-        }
-        const data = await response.json();
-        console.log('Resposta da API:', data);
-        const mappedUsers = data.content.map(user => ({
-          id: user.id,
-          nome: user.nome,
-          lotacao: user.lotacaoAtual || 'Não especificada',
-          administrador: user.administrador,
-          pareto: user.pareto,
-          atualizacaoAutomatica: user.atualizarLotAutomatica,
-          administradorRisco: user.administradorRisco
-        }));
-        setUsers(mappedUsers);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-      } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
-        if (error.message.includes('403')) {
-          alert('Acesso negado (403). Verifique o token ou permissões.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
+    fetchUsers(setLoading, setUsers, setTotalPages, setTotalElements, currentPage, pageSize, API_URL);
   }, [currentPage, pageSize]);
 
-  // Carrega indicadores quando o modal é aberto
   useEffect(() => {
     if (showIndicadoresModal && selectedUserId) {
-      fetchIndicadores();
+      scrollPosition.current = window.scrollY; // Salva a posição de rolagem ao abrir o modal
+      fetchIndicadores(setIndicadores, selectedUserId, USER_BY_ID_URL);
+    } else if (!showIndicadoresModal) {
+      window.scrollTo(0, scrollPosition.current);
     }
   }, [showIndicadoresModal, selectedUserId]);
-
-  const fetchIndicadores = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${USER_BY_ID_URL}/${selectedUserId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar indicadores: ${response.status}`);
-      }
-      const userData = await response.json();
-      // Filtra indicadores não excluídos manualmente, já que o backend pode não filtrar
-      const indicadoresNaoExcluidos = userData.indicadoresLiberados
-        ? userData.indicadoresLiberados.filter(ind => !ind.indicadorExcluido)
-        : [];
-      setIndicadores(indicadoresNaoExcluidos);
-    } catch (error) {
-      console.error('Erro ao carregar indicadores:', error);
-    }
-  };
 
   const openIndicadoresModal = (userId) => {
     setSelectedUserId(userId);
     setShowIndicadoresModal(true);
   };
 
-  const handleAddIndicador = async () => {
-    // Exemplo: Adicionar um indicador fictício (substitua por um formulário ou lógica real)
-    const novoIndicador = {
-      id: Date.now(), // ID temporário, substitua por ID real do backend
-      nome: `Novo Indicador ${new Date().getTime()}`,
-      tipo: "Quantitativo",
-      indicadorExcluido: false
-    };
-    try {
-      const token = localStorage.getItem('token');
-      const userResponse = await fetch(`${USER_BY_ID_URL}/${selectedUserId}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-      if (!userResponse.ok) throw new Error('Erro ao buscar usuário');
-      const userData = await userResponse.json();
-      const updatedIndicadores = [...(userData.indicadoresLiberados || []), novoIndicador];
-      const updatedUser = { ...userData, indicadoresLiberados: updatedIndicadores };
-
-      const updateResponse = await fetch(UPDATE_USER_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser)
-      });
-      if (!updateResponse.ok) throw new Error('Erro ao atualizar usuário');
-      fetchIndicadores(); // Recarrega os indicadores
-    } catch (error) {
-      console.error('Erro ao adicionar indicador:', error);
-      alert('Falha ao adicionar indicador. Tente novamente.');
-    }
+  const handleAddIndicador = () => {
+    handleAddIndicador(setIndicadores, selectedUserId, USER_BY_ID_URL, UPDATE_USER_URL);
   };
 
-  const handleExcludeIndicador = async (indicadorId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const userResponse = await fetch(`${USER_BY_ID_URL}/${selectedUserId}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-      if (!userResponse.ok) throw new Error('Erro ao buscar usuário');
-      const userData = await userResponse.json();
-      const updatedIndicadores = (userData.indicadoresLiberados || []).filter(ind => ind.id !== indicadorId);
-      const updatedUser = { ...userData, indicadoresLiberados: updatedIndicadores };
-
-      const updateResponse = await fetch(UPDATE_USER_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser)
-      });
-      if (!updateResponse.ok) throw new Error('Erro ao atualizar usuário');
-      fetchIndicadores(); // Recarrega os indicadores
-    } catch (error) {
-      console.error('Erro ao excluir indicador:', error);
-      alert('Falha ao excluir indicador. Tente novamente.');
-    }
+  const handleExcludeIndicador = (indicadorId) => {
+    handleExcludeIndicador(setIndicadores, selectedUserId, indicadorId, USER_BY_ID_URL, UPDATE_USER_URL);
   };
 
   const renderIndicadores = () => {
+    if (indicadores.length === 0) {
+      return (
+        <tr>
+          <td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td>
+        </tr>
+      );
+    }
     return indicadores.map(indicador => (
       <tr key={indicador.id} className="border-bottom">
         <td className="py-2 px-3">{indicador.nome}</td>
@@ -185,79 +84,12 @@ function Usuario() {
     }
   ];
 
-  const handlePermissionChange = async (userId, permission, value) => {
-    const updatedUser = users.find(user => user.id === userId);
-    if (!updatedUser) return;
-
-    const userToUpdate = {
-      id: updatedUser.id,
-      nome: updatedUser.nome,
-      login: updatedUser.login || '',
-      lotacaoAtual: updatedUser.lotacao,
-      administrador: permission === 'administrador' ? value : updatedUser.administrador,
-      pareto: permission === 'pareto' ? value : updatedUser.pareto,
-      atualizarLotAutomatica: permission === 'atualizacaoAutomatica' ? value : updatedUser.atualizacaoAutomatica,
-      administradorRisco: permission === 'administradorRisco' ? value : updatedUser.administradorRisco
-    };
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(UPDATE_USER_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(userToUpdate)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro ao atualizar: ${response.status} - ${errorText}`);
-      }
-
-      const updatedData = await response.json();
-      const mappedUpdatedUser = {
-        id: updatedData.id,
-        nome: updatedData.nome,
-        lotacao: updatedData.lotacaoAtual || 'Não especificada',
-        administrador: updatedData.administrador,
-        pareto: updatedData.pareto,
-        atualizacaoAutomatica: updatedData.atualizarLotAutomatica,
-        administradorRisco: updatedData.administradorRisco
-      };
-      setUsers(users.map(user => user.id === userId ? mappedUpdatedUser : user));
-      console.log(`Permissão ${permission} atualizada para ${value} no usuário ${userId}`);
-    } catch (error) {
-      console.error('Erro ao atualizar permissão:', error);
-      alert('Falha ao atualizar a permissão. Tente novamente.');
-      setUsers(users.map(user =>
-        user.id === userId ? { ...user, [permission]: !value } : user
-      ));
-    }
+  const handlePermissionChange = (userId, permission, value) => {
+    handlePermissionChange(setUsers, userId, permission, value, users, UPDATE_USER_URL);
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm(`Tem certeza que deseja excluir o usuário com ID ${userId}?`)) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${DELETE_USER_URL}/${userId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Erro ao excluir: ${response.status} - ${errorText}`);
-        }
-
-        setUsers(users.filter(user => user.id !== userId));
-        if (currentPage > 0 && users.length % pageSize === 1) {
-          setCurrentPage(currentPage - 1);
-        }
-        console.log(`Usuário com ID ${userId} excluído com sucesso`);
-      } catch (error) {
-        console.error('Erro ao excluir usuário:', error);
-        alert('Falha ao excluir o usuário. Tente novamente.');
-      }
-    }
+  const handleDelete = (userId) => {
+    handleDelete(setUsers, setCurrentPage, setLoading, userId, users, pageSize, currentPage, DELETE_USER_URL);
   };
 
   const renderUsers = () => {

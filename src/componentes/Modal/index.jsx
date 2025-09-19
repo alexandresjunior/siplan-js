@@ -1,5 +1,4 @@
 import React from 'react';
-import "../Modal/estilos.css";
 
 const Modal = ({ isOpen, onClose, title, children, actionButtons = [] }) => {
   if (!isOpen) return null;
@@ -10,14 +9,14 @@ const Modal = ({ isOpen, onClose, title, children, actionButtons = [] }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">{title}</h5>
-            <div className="d-flex ms-auto"> {/* Ajuste 1: Alinha botões à direita */}
+            <div className="d-flex ms-auto">
               {actionButtons.map((button, index) => (
                 <button
                   key={index}
                   type={button.type || 'button'}
                   className={button.className}
                   onClick={button.onClick}
-                  style={button.label === 'Sair' ? { marginLeft: '10px', transition: 'background-color 0.3s ease' } : { marginLeft: '10px' }} // Ajuste 2: Estilo para Sair com transição
+                  style={button.label === 'Sair' ? { marginLeft: '10px', transition: 'background-color 0.3s ease' } : { marginLeft: '10px' }}
                 >
                   {button.label}
                 </button>
@@ -26,7 +25,7 @@ const Modal = ({ isOpen, onClose, title, children, actionButtons = [] }) => {
                 type="button"
                 className="btn btn-outline-primary"
                 onClick={onClose}
-                style={{ marginLeft: '10px', transition: 'background-color 0.3s ease' }} // Ajuste 3: Estilo para Sair com transição
+                style={{ marginLeft: '10px', transition: 'background-color 0.3s ease' }}
               >
                 Sair
               </button>
