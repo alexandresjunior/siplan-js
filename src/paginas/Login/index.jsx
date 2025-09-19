@@ -6,15 +6,20 @@ import logoCompesa from "../../assets/imagens/compesa_logo.png";
 import bgLogin from "../../assets/imagens/bgLogin.png"; 
 
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [erro, setErro] = useState("");
+  const [nomeUsuario, setNomeUsuario] = useState("");
+  const [senha, setSenha] = useState("");
+  const [mensagemErro, setMensagemErro] = useState("");
 
-  const navigate = useNavigate();
-  const { login } = loginService; 
+  const navegar = useNavigate();
+  const { login } = loginService;
 
-  const handleSubmit = () => {
-    login(username, password, navigate, setErro);
+  const manipularEnvio = () => {
+    console.log("Botão ENTRAR clicado. Usuário:", nomeUsuario, "Senha:", senha);
+    if (!nomeUsuario || !senha) {
+      setMensagemErro("Por favor, preencha usuário e senha.");
+      return;
+    }
+    login(nomeUsuario, senha, navegar, setMensagemErro);
   };
 
   return (
@@ -43,28 +48,38 @@ function Login() {
 
         <p className="text-muted-small">Insira suas credenciais de rede</p>
 
-        {erro && <div className="alert alert-danger">{erro}</div>}
+        {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
 
-        <input
-          type="text"
-          className="form-control mb-3"
-          placeholder="Usuário"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+        <div className="mb-3">
+          <input
+            type="text"
+            id="usuario"
+            name="usuario"
+            className="form-control mb-3"
+            placeholder="Usuário"
+            value={nomeUsuario}
+            onChange={(e) => setNomeUsuario(e.target.value)}
+            aria-label="Usuário"
+          />
+        </div>
 
-        <input
-          type="password"
-          className="form-control mb-3"
-          placeholder="********"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="mb-3">
+          <input
+            type="password"
+            id="senha"
+            name="senha"
+            className="form-control mb-3"
+            placeholder="********"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            aria-label="Senha"
+          />
+        </div>
 
         <button
           type="button"
           className="btn btn-primary w-100 fw-bold"
-          onClick={handleSubmit}
+          onClick={manipularEnvio}
         >
           ENTRAR
         </button>

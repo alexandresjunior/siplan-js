@@ -1,39 +1,39 @@
 import "../Pagination/estilos.css";
 
-const MAX_BUTTONS = 5;
+const MAX_BOTOES = 5;
 
 const Pagination = ({
-  styles,
-  page,
-  setPage,
-  size,
-  setSize,
-  totalPages,
-  totalElements,
-  pageOptions = [10, 20, 40]
+  estilos,
+  pagina,
+  definirPagina,
+  tamanho,
+  definirTamanho,
+  totalPaginas,
+  totalElementos,
+  opcoesPagina = [10, 20, 40]
 }) => {
-  const startPage = Math.max(
+  const paginaInicial = Math.max(
     0,
-    Math.min(page - Math.floor(MAX_BUTTONS / 2), totalPages - MAX_BUTTONS)
+    Math.min(pagina - Math.floor(MAX_BOTOES / 2), totalPaginas - MAX_BOTOES)
   );
 
-  const endPage = Math.min(totalPages, startPage + MAX_BUTTONS);
+  const paginaFinal = Math.min(totalPaginas, paginaInicial + MAX_BOTOES);
 
-  const visiblePages = Array.from(
-    { length: endPage - startPage },
-    (_, i) => startPage + i + 1
+  const paginasVisiveis = Array.from(
+    { length: paginaFinal - paginaInicial },
+    (_, i) => paginaInicial + i + 1
   );
 
   return (
-    <div className={styles}>
-      <nav aria-label="page navigation">
+    <div className={estilos}>
+      <nav aria-label="navegação de página">
         <ul className="pagination me-2">
-          {visiblePages.length >= 1 &&
-            visiblePages.map((pageNumber) => (
-              <li key={pageNumber} className="page-item">
+          {paginasVisiveis.length >= 1 &&
+            paginasVisiveis.map((numeroPagina) => (
+              <li key={numeroPagina} className="page-item">
                 <button
-                  className={`page-link ${pageNumber === page + 1 && "active"} custom-page-link`}
-                  onClick={() => setPage(pageNumber - 1)}
+                  className={`page-link ${numeroPagina === pagina + 1 && "active"} custom-page-link`}
+                  onClick={() => definirPagina(numeroPagina - 1)}
                   style={{
                     borderRadius: "50%",
                     width: "40px",
@@ -42,12 +42,12 @@ const Pagination = ({
                     alignItems: "center",
                     justifyContent: "center",
                     margin: "0 2px",
-                    backgroundColor: pageNumber === page + 1 ? "var(--azul-compesa)" : "transparent",
-                    color: pageNumber === page + 1 ? "#ffffff" : "var(--azul-compesa)",
+                    backgroundColor: numeroPagina === pagina + 1 ? "var(--azul-compesa)" : "transparent",
+                    color: numeroPagina === pagina + 1 ? "#ffffff" : "var(--azul-compesa)",
                     border: "1px solid var(--azul-compesa)"
                   }}
                 >
-                  {pageNumber}
+                  {numeroPagina}
                 </button>
               </li>
             ))}
@@ -57,21 +57,17 @@ const Pagination = ({
       <h6 className="d-flex align-items-center text-dark mb-3">
         Exibir
         <select
+          id="tamanho-pagina"
+          name="tamanho-pagina"
           className="form-select text-body-primary mx-2"
-          onChange={(event) => setSize(event.target.value)}
-          defaultValue={size}
+          onChange={(evento) => definirTamanho(evento.target.value)}
+          value={tamanho} // Corrigido de defaultValue para value
         >
-          <option className="form-select-item text-body-primary" value={pageOptions[0]}>
-            {pageOptions[0]}
-          </option>
-          <option className="form-select-item text-body-primary" value={pageOptions[1]}>
-            {pageOptions[1]}
-          </option>
-          <option className="form-select-item text-body-primary" value={pageOptions[2]}>
-            {pageOptions[2]}
-          </option>
+          <option value={opcoesPagina[0]}>{opcoesPagina[0]}</option>
+          <option value={opcoesPagina[1]}>{opcoesPagina[1]}</option>
+          <option value={opcoesPagina[2]}>{opcoesPagina[2]}</option>
         </select>
-        de {totalElements} resultados
+        de {totalElementos} resultados
       </h6>
     </div>
   );

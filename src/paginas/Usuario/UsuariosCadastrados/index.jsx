@@ -4,55 +4,61 @@ import React, { useState, useEffect, useRef } from 'react';
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal"; // Import do Modal genérico (coringa)
 import { AiOutlineDelete } from 'react-icons/ai'; // Importação do ícone de lixeira
-import { fetchIndicadores, fetchUsers } from "../../../service/usuariosCadastradosService";
+import { buscarIndicadores, buscarUsuarios } from "../../../service/usuariosCadastradosService";
 
 // URL base da API (mantidas como constantes no componente por conveniência)
-const API_URL = 'http://localhost:8098/usuariosip/usuarioscadastrados';
-const UPDATE_USER_URL = 'http://localhost:8098/usuariosip/atualizarUsuario';
-const USER_BY_ID_URL = 'http://localhost:8098/usuariosip/obterporid'; // Endpoint para obter usuário por ID
-const INDICADORES_URL = 'http://localhost:8098/usuariosip/indicadores'; // Endpoint para indicadores 
-const DELETE_USER_URL = 'http://localhost:8098/usuariosip/obterporid'; // Placeholder para exclusão
+const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
+const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
+const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid'; // Endpoint para obter usuário por ID
+const URL_INDICADORES = 'http://localhost:8098/usuariosip/indicadores'; // Endpoint para indicadores 
+const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip/obterporid'; // Placeholder para exclusão
 
 function Usuario() {
-  const [users, setUsers] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [showIndicadoresModal, setShowIndicadoresModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [indicadores, setIndicadores] = useState([]); // Estado para armazenar indicadores dinamicamente
-  const scrollPosition = useRef(0); // Referência para armazenar a posição de rolagem
+  const [usuarios, definirUsuarios] = useState([]);
+  const [paginaAtual, definirPaginaAtual] = useState(0);
+  const [tamanhoPagina, definirTamanhoPagina] = useState(20);
+  const [totalPaginas, definirTotalPaginas] = useState(0);
+  const [totalElementos, definirTotalElementos] = useState(0);
+  const [carregando, definirCarregando] = useState(true);
+  const [exibirModalIndicadores, definirExibirModalIndicadores] = useState(false);
+  const [idUsuarioSelecionado, definirIdUsuarioSelecionado] = useState(null);
+  const [indicadores, definirIndicadores] = useState([]); // Estado para armazenar indicadores dinamicamente
+  const posicaoRolagem = useRef(0); // Referência para armazenar a posição de rolagem
 
   useEffect(() => {
-    fetchUsers(setLoading, setUsers, setTotalPages, setTotalElements, currentPage, pageSize, API_URL);
-  }, [currentPage, pageSize]);
+    buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
+  }, [paginaAtual, tamanhoPagina]);
 
   useEffect(() => {
-    if (showIndicadoresModal && selectedUserId) {
-      scrollPosition.current = window.scrollY; // Salva a posição de rolagem ao abrir o modal
-      fetchIndicadores(setIndicadores, selectedUserId, USER_BY_ID_URL);
-    } else if (!showIndicadoresModal) {
-      window.scrollTo(0, scrollPosition.current);
-    }
-  }, [showIndicadoresModal, selectedUserId]);
+    const carregarIndicadores = async () => {
+      if (exibirModalIndicadores && idUsuarioSelecionado) {
+        posicaoRolagem.current = window.scrollY; // Salva a posição de rolagem ao abrir o modal
+        console.log("Buscando indicadores para ID:", idUsuarioSelecionado); // Log de depuração
+        await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
+        console.log("Indicadores após busca:", indicadores); // Verifica o estado após a atualização
+      } else if (!exibirModalIndicadores) {
+        window.scrollTo(0, posicaoRolagem.current);
+      }
+    };
+    carregarIndicadores();
+  }, [exibirModalIndicadores, idUsuarioSelecionado]);
 
-  const openIndicadoresModal = (userId) => {
-    setSelectedUserId(userId);
-    setShowIndicadoresModal(true);
+  const abrirModalIndicadores = (idUsuario) => {
+    definirIdUsuarioSelecionado(idUsuario);
+    definirExibirModalIndicadores(true);
   };
 
-  const handleAddIndicador = () => {
-    handleAddIndicador(setIndicadores, selectedUserId, USER_BY_ID_URL, UPDATE_USER_URL);
+  const manipularAdicionarIndicador = () => {
+    manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO);
   };
 
-  const handleExcludeIndicador = (indicadorId) => {
-    handleExcludeIndicador(setIndicadores, selectedUserId, indicadorId, USER_BY_ID_URL, UPDATE_USER_URL);
+  const manipularExcluirIndicador = (idIndicador) => {
+    manipularExcluirIndicador(definirIndicadores, idUsuarioSelecionado, idIndicador, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO);
   };
 
-  const renderIndicadores = () => {
-    if (indicadores.length === 0) {
+  const renderizarIndicadores = () => {
+    console.log("Renderizando indicadores no momento:", indicadores); // Log antes da renderização
+    if (!indicadores || indicadores.length === 0) {
       return (
         <tr>
           <td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td>
@@ -61,12 +67,12 @@ function Usuario() {
     }
     return indicadores.map(indicador => (
       <tr key={indicador.id} className="border-bottom">
-        <td className="py-2 px-3">{indicador.nome}</td>
-        <td className="py-2 px-3">{indicador.tipo}</td>
+        <td className="py-2 px-3">{indicador.nome || 'Sem nome'}</td>
+        <td className="py-2 px-3">{indicador.tipo || 'Sem tipo'}</td>
         <td className="py-2 px-3 text-center">
           <button
             className="btn btn-link p-0 d-flex justify-content-center align-items-center"
-            onClick={() => handleExcludeIndicador(indicador.id)}
+            onClick={() => manipularExcluirIndicador(indicador.id)}
             style={{ width: '100%', height: '100%' }}
           >
             <AiOutlineDelete style={{ fontSize: '20px', color: '#5f5f5fff' }} />
@@ -76,71 +82,75 @@ function Usuario() {
     ));
   };
 
-  const modalActionButtons = [
+  const botoesAcaoModal = [
     {
       label: 'Adicionar Indicador',
       className: 'btn btn-primary',
-      onClick: handleAddIndicador
+      onClick: manipularAdicionarIndicador
     }
   ];
 
-  const handlePermissionChange = (userId, permission, value) => {
-    handlePermissionChange(setUsers, userId, permission, value, users, UPDATE_USER_URL);
+  const manipularAlterarPermissao = (idUsuario, permissao, valor) => {
+    manipularAlterarPermissao(definirUsuarios, idUsuario, permissao, valor, usuarios, URL_ATUALIZAR_USUARIO);
   };
 
-  const handleDelete = (userId) => {
-    handleDelete(setUsers, setCurrentPage, setLoading, userId, users, pageSize, currentPage, DELETE_USER_URL);
+  const manipularExcluir = (idUsuario) => {
+    manipularExcluir(definirUsuarios, definirPaginaAtual, definirCarregando, idUsuario, usuarios, tamanhoPagina, paginaAtual, URL_EXCLUIR_USUARIO);
   };
 
-  const renderUsers = () => {
-    if (loading) return <tr><td colSpan="4" className="text-center py-3">Carregando...</td></tr>;
-    if (users.length === 0) return <tr><td colSpan="4" className="text-center py-3">Nenhum usuário encontrado.</td></tr>;
+  const renderizarUsuarios = () => {
+    if (carregando) return <tr><td colSpan="4" className="text-center py-3">Carregando...</td></tr>;
+    if (usuarios.length === 0) return <tr><td colSpan="4" className="text-center py-3">Nenhum usuário encontrado.</td></tr>;
 
-    return users.map(user => (
-      <tr key={user.id} className="border-bottom">
-        <td className="py-2 px-3">{user.nome}</td>
-        <td className="py-2 px-3">{user.lotacao}</td>
+    return usuarios.map(usuario => (
+      <tr key={usuario.id} className="border-bottom">
+        <td className="py-2 px-3">{usuario.nome}</td>
+        <td className="py-2 px-3">{usuario.lotacao}</td>
         <td className="py-2 px-3" style={{ verticalAlign: "middle" }}>
           <div className="d-flex flex-column">
             <div className="form-check mb-2">
               <input
                 type="checkbox"
-                id={`admin_${user.id}`}
-                checked={user.administrador}
-                onChange={() => handlePermissionChange(user.id, 'administrador', !user.administrador)}
+                id={`admin_${usuario.id}`}
+                name={`admin_${usuario.id}`} // Adicionado name
+                checked={usuario.administrador}
+                onChange={() => manipularAlterarPermissao(usuario.id, 'administrador', !usuario.administrador)}
                 className="form-check-input"
               />
-              <label htmlFor={`admin_${user.id}`} className="form-check-label">Administrador</label>
+              <label htmlFor={`admin_${usuario.id}`} className="form-check-label">Administrador</label>
             </div>
             <div className="form-check mb-2">
               <input
                 type="checkbox"
-                id={`pareto_${user.id}`}
-                checked={user.pareto}
-                onChange={() => handlePermissionChange(user.id, 'pareto', !user.pareto)}
+                id={`pareto_${usuario.id}`}
+                name={`pareto_${usuario.id}`} // Adicionado name
+                checked={usuario.pareto}
+                onChange={() => manipularAlterarPermissao(usuario.id, 'pareto', !usuario.pareto)}
                 className="form-check-input"
               />
-              <label htmlFor={`pareto_${user.id}`} className="form-check-label">Visualizar Pareto</label>
+              <label htmlFor={`pareto_${usuario.id}`} className="form-check-label">Visualizar Pareto</label>
             </div>
             <div className="form-check mb-2">
               <input
                 type="checkbox"
-                id={`atualizacao_${user.id}`}
-                checked={user.atualizacaoAutomatica}
-                onChange={() => handlePermissionChange(user.id, 'atualizacaoAutomatica', !user.atualizacaoAutomatica)}
+                id={`atualizacao_${usuario.id}`}
+                name={`atualizacao_${usuario.id}`} // Adicionado name
+                checked={usuario.atualizacaoAutomatica}
+                onChange={() => manipularAlterarPermissao(usuario.id, 'atualizacaoAutomatica', !usuario.atualizacaoAutomatica)}
                 className="form-check-input"
               />
-              <label htmlFor={`atualizacao_${user.id}`} className="form-check-label">Atualização Automática</label>
+              <label htmlFor={`atualizacao_${usuario.id}`} className="form-check-label">Atualização Automática</label>
             </div>
             <div className="form-check">
               <input
                 type="checkbox"
-                id={`risco_${user.id}`}
-                checked={user.administradorRisco}
-                onChange={() => handlePermissionChange(user.id, 'administradorRisco', !user.administradorRisco)}
+                id={`risco_${usuario.id}`}
+                name={`risco_${usuario.id}`} // Adicionado name
+                checked={usuario.administradorRisco}
+                onChange={() => manipularAlterarPermissao(usuario.id, 'administradorRisco', !usuario.administradorRisco)}
                 className="form-check-input"
               />
-              <label htmlFor={`risco_${user.id}`} className="form-check-label">Administrador de Riscos</label>
+              <label htmlFor={`risco_${usuario.id}`} className="form-check-label">Administrador de Riscos</label>
             </div>
           </div>
         </td>
@@ -148,21 +158,21 @@ function Usuario() {
           <div className="dropdown">
             <button
               type="button"
-              id={`dropdownMenu_${user.id}`}
+              id={`menuDropdown_${usuario.id}`}
               data-bs-toggle="dropdown"
               aria-expanded="false"
               style={{ fontSize: "1.5em", color: "black", background: "none", border: "none", padding: "0" }}
-              onClick={() => console.log('Dropdown clicado para userId:', user.id)}
+              onClick={() => console.log('Dropdown clicado para userId:', usuario.id)}
             >
               ⋮
             </button>
-            <ul className="dropdown-menu" aria-labelledby={`dropdownMenu_${user.id}`}>
-              <li><a className="dropdown-item" href="#" onClick={() => openIndicadoresModal(user.id)}>Indicadores Liberados</a></li>
+            <ul className="dropdown-menu" aria-labelledby={`menuDropdown_${usuario.id}`}>
+              <li><a className="dropdown-item" href="#" onClick={() => abrirModalIndicadores(usuario.id)}>Indicadores Liberados</a></li>
               <li><a className="dropdown-item" href="#">Elementos Organizacionais Liberados</a></li>
               <li>
                 <button
                   className="dropdown-item text-danger"
-                  onClick={() => handleDelete(user.id)}
+                  onClick={() => manipularExcluir(usuario.id)}
                 >
                   Excluir
                 </button>
@@ -199,25 +209,25 @@ function Usuario() {
                   <th className="p-3"></th>
                 </tr>
               </thead>
-              <tbody>{renderUsers()}</tbody>
+              <tbody>{renderizarUsuarios()}</tbody>
             </table>
             <Pagination
-              styles="d-flex justify-content-between align-items-center mt-4"
-              page={currentPage}
-              setPage={setCurrentPage}
-              size={pageSize}
-              setSize={setPageSize}
-              totalPages={totalPages}
-              totalElements={totalElements}
-              pageOptions={[10, 20, 40]}
+              estilos="d-flex justify-content-between align-items-center mt-4"
+              pagina={paginaAtual}
+              definirPagina={definirPaginaAtual}
+              tamanho={tamanhoPagina}
+              definirTamanho={definirTamanhoPagina}
+              totalPaginas={totalPaginas}
+              totalElementos={totalElementos}
+              opcoesPagina={[10, 20, 40]}
             />
           </div>
         </div>
         <Modal
-          isOpen={showIndicadoresModal}
-          onClose={() => setShowIndicadoresModal(false)}
-          title={`Indicadores Liberados - Usuário ID: ${selectedUserId}`}
-          actionButtons={modalActionButtons}
+          estaAberto={exibirModalIndicadores}
+          aoFechar={() => definirExibirModalIndicadores(false)}
+          titulo={`Indicadores Liberados - Usuário ID: ${idUsuarioSelecionado}`}
+          botoesAcao={botoesAcaoModal}
         >
           <div className="card-body">
             <table className="table table-striped">
@@ -228,7 +238,7 @@ function Usuario() {
                   <th className="p-3 text-danger d-flex justify-content-center">Excluir</th>
                 </tr>
               </thead>
-              <tbody>{renderIndicadores()}</tbody>
+              <tbody>{renderizarIndicadores()}</tbody>
             </table>
           </div>
         </Modal>

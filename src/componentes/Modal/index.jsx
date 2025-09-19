@@ -1,40 +1,39 @@
 import React from 'react';
+import './estilos.css';
 
-const Modal = ({ isOpen, onClose, title, children, actionButtons = [] }) => {
-  if (!isOpen) return null;
+const Modal = ({ estaAberto, aoFechar, titulo, children, botoesAcao = [] }) => {
+  if (!estaAberto) return null;
 
   return (
     <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
+            <h5 className="modal-title">{titulo}</h5>
             <div className="d-flex ms-auto">
-              {actionButtons.map((button, index) => (
+              {botoesAcao.map((botao, index) => (
                 <button
                   key={index}
-                  type={button.type || 'button'}
-                  className={button.className}
-                  onClick={button.onClick}
-                  style={button.label === 'Sair' ? { marginLeft: '10px', transition: 'background-color 0.3s ease' } : { marginLeft: '10px' }}
+                  type={botao.type || 'button'}
+                  className={botao.className}
+                  onClick={botao.onClick}
+                  style={{ marginLeft: '10px' }}
                 >
-                  {button.label}
+                  {botao.label}
                 </button>
               ))}
               <button
                 type="button"
-                className="btn btn-outline-primary"
-                onClick={onClose}
-                style={{ marginLeft: '10px', transition: 'background-color 0.3s ease' }}
+                className="btn btn-outline-primary btn-sair"
+                onClick={aoFechar}
+                style={{ marginLeft: '10px' }}
               >
                 Sair
               </button>
             </div>
-            
           </div>
-          <div className="modal-body">
-            {children}
-          </div>
+          <div className="modal-body">{children}</div>
+          {/* Removido o modal-footer para eliminar o botão "Adicionar Indicador" da parte inferior */}
         </div>
       </div>
     </div>
