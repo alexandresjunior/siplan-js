@@ -71,21 +71,76 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
   }
 };
 
-export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO) => {
-  const novoIndicador = {
-    id: Date.now(), // ID temporário, substitua por ID real do backend
-    nome: `Novo Indicador ${new Date().getTime()}`,
-    tipo: "Quantitativo",
-    indicadorExcluido: false
-  };
+export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador) => {
   try {
     const token = localStorage.getItem('token');
+
+    // Determinar o endpoint com base no tipo de indicador
+    let endpoint = '';
+    let indicadorPayload = {
+      nomeIndicador: novoIndicador.nome,
+      tipoIndicador: novoIndicador.tipo,
+      sentidoIndicador: novoIndicador.sentido,
+      unidadeMedida: novoIndicador.unidadeMedida,
+      descricao: novoIndicador.descricao || null,
+      dataCriacao: new Date().toISOString(),
+      indicadorExcluido: false,
+    };
+
+    switch (novoIndicador.tipo) {
+      case 'manual':
+        endpoint = 'http://localhost:8098/indicador/manual';
+        break;
+      case 'automatico':
+        endpoint = 'http://localhost:8098/indicador/automatico';
+        break;
+      case 'variavel':
+        endpoint = 'http://localhost:8098/indicador/variavel';
+        break;
+      case 'premissa':
+        endpoint = 'http://localhost:8098/indicador/premissa';
+        break;
+      default:
+        throw new Error('Tipo de indicador inválido');
+    }
+
+    // Adicionar campos relacionais (simplificados)
+    indicadorPayload.risco = { nome: novoIndicador.risco };
+    indicadorPayload.objetivo = { nome: novoIndicador.objetivoEstrategico };
+    indicadorPayload.elementoOrganizacionalResp = { nome: novoIndicador.unidadeResponsavel };
+
+    // Enviar o novo indicador ao backend
+    const respostaIndicador = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(indicadorPayload)
+    });
+
+    if (!respostaIndicador.ok) {
+      const textoErro = await respostaIndicador.text();
+      throw new Error(`Erro ao criar indicador: ${respostaIndicador.status} - ${textoErro}`);
+    }
+
+    const dadosIndicador = await respostaIndicador.json();
+    const novoIdIndicador = dadosIndicador.id; // O backend retorna o ID gerado
+
+    // Atualizar o usuário para incluir o novo indicador
     const respostaUsuario = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     if (!respostaUsuario.ok) throw new Error('Erro ao buscar usuário');
     const dadosUsuario = await respostaUsuario.json();
-    const indicadoresAtualizados = [...(dadosUsuario.indicadoresLiberados || []), novoIndicador];
+
+    const indicadoresAtualizados = [...(dadosUsuario.indicadoresLiberados || []), {
+      id: novoIdIndicador,
+      nomeIndicador: novoIndicador.nome,
+      tipoIndicador: novoIndicador.tipo,
+      indicadorExcluido: false
+    }];
+
     const usuarioAtualizado = { ...dadosUsuario, indicadoresLiberados: indicadoresAtualizados };
 
     const respostaAtualizacao = await fetch(URL_ATUALIZAR_USUARIO, {
@@ -93,8 +148,13 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(usuarioAtualizado)
     });
-    if (!respostaAtualizacao.ok) throw new Error('Erro ao atualizar usuário');
-    buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID); // Recarrega os indicadores
+    if (!respostaAtualizacao.ok) {
+      const textoErro = await respostaAtualizacao.text();
+      throw new Error(`Erro ao atualizar usuário: ${respostaAtualizacao.status} - ${textoErro}`);
+    }
+
+    // Recarregar os indicadores após sucesso
+    await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
   } catch (erro) {
     console.error('Erro ao adicionar indicador:', erro);
     alert('Falha ao adicionar indicador. Tente novamente.');
