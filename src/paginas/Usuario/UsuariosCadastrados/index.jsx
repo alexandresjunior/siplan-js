@@ -4,22 +4,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
 import { AiOutlineDelete } from 'react-icons/ai';
+import { FaCheck, FaTimes } from "react-icons/fa";
 import {
   buscarIndicadores,
   buscarUsuarios,
   manipularAdicionarIndicador,
-  manipularAlterarPermissao,
-  manipularExcluir
+  manipularExcluir,
+  manipularAlterarPermissao
 } from "../../../service/usuariosCadastradosService";
 
 // URL base da API
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
-const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
+const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuarios'; // Alterado para o endpoint de lista
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip/excluir';
-// Endpoints atualizados com base nos controllers
-const URL_RISCO = 'http://localhost:8098/risco/list-by-ano/${ano}'; 
-const URL_OBJETIVO = 'http://localhost:8098/objetivo/list-by-ano/${ano}'; // 
+// Endpoints ajustados para query parameter
+const URL_RISCO = 'http://localhost:8098/risco/list-by-ano';
+const URL_OBJETIVO = 'http://localhost:8098/objetivo/list-by-ano';
 
 function Usuario() {
   const [usuarios, definirUsuarios] = useState([]);
@@ -30,6 +31,7 @@ function Usuario() {
   const [carregando, definirCarregando] = useState(true);
   const [exibirModalIndicadores, definirExibirModalIndicadores] = useState(false);
   const [exibirModalAdicionar, definirExibirModalAdicionar] = useState(false);
+  const [exibirModalEditar, definirExibirModalEditar] = useState(false);
   const [idUsuarioSelecionado, definirIdUsuarioSelecionado] = useState(null);
   const [indicadores, definirIndicadores] = useState([]);
   const posicaoRolagem = useRef(0);
@@ -40,8 +42,8 @@ function Usuario() {
   const [descricao, setDescricao] = useState('');
   const [sentido, setSentido] = useState('');
   const [unidadeMedida, setUnidadeMedida] = useState('');
-  const [riscoId, setRiscoId] = useState(''); // Alterado para ID
-  const [objetivoId, setObjetivoId] = useState(''); // Alterado para ID
+  const [riscoId, setRiscoId] = useState('');
+  const [objetivoId, setObjetivoId] = useState('');
   const [unidadeResponsavel, setUnidadeResponsavel] = useState('');
   const [diretoriaGerencia, setDiretoriaGerencia] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
@@ -50,10 +52,12 @@ function Usuario() {
   const [opcoesRisco, setOpcoesRisco] = useState([]);
   const [opcoesObjetivo, setOpcoesObjetivo] = useState([]);
 
+  // Estados para o modal de edição de permissões
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
+
   useEffect(() => {
     buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
 
-    // Carregar opções via API (uma vez, no mount)
     const carregarOpcoes = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -61,32 +65,23 @@ function Usuario() {
         return;
       }
 
+      const ano = 2025;
       try {
         const [riscoResp, objetivoResp] = await Promise.all([
-          fetch(URL_RISCO, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
-          fetch(URL_OBJETIVO, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
+          fetch(`${URL_RISCO}?ano=${ano}`, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
+          fetch(`${URL_OBJETIVO}?ano=${ano}`, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
         ]);
 
-        if (!riscoResp.ok) throw new Error(`Erro ao carregar riscos: ${riscoResp.statusText}`);
-        if (!objetivoResp.ok) throw new Error(`Erro ao carregar objetivos: ${objetivoResp.statusText}`);
+        if (!riscoResp.ok) throw new Error(`Erro ao carregar riscos: ${riscoResp.status}`);
+        if (!objetivoResp.ok) throw new Error(`Erro ao carregar objetivos: ${objetivoResp.status}`);
 
-        const [riscoData, objetivoData] = await Promise.all([
-          riscoResp.json(),
-          objetivoResp.json(),
-        ]);
-
-        console.log('Riscos carregados:', riscoData); // Para depuração
-        console.log('Objetivos carregados:', objetivoData); // Para depuração
-
-        // Filtrar itens não removidos
+        const [riscoData, objetivoData] = await Promise.all([riscoResp.json(), objetivoResp.json()]);
         const riscosFiltrados = riscoData.filter(r => !r.removido);
         const objetivosFiltrados = objetivoData.filter(o => !o.removido);
-
         setOpcoesRisco(riscosFiltrados);
         setOpcoesObjetivo(objetivosFiltrados);
       } catch (erro) {
         console.error('Erro ao carregar opções:', erro.message);
-        // Opcional: definir valores padrão caso a API falhe
         setOpcoesRisco([{ id: 1, nome: 'Baixo' }, { id: 2, nome: 'Médio' }, { id: 3, nome: 'Alto' }]);
         setOpcoesObjetivo([{ id: 1, nome: 'Crescimento' }, { id: 2, nome: 'Sustentabilidade' }]);
       }
@@ -128,8 +123,22 @@ function Usuario() {
     definirExibirModalAdicionar(true);
   };
 
+  const abrirModalEditar = (idUsuario) => {
+    const usuario = usuarios.find(u => u.id === idUsuario);
+    if (usuario) {
+      setUsuarioEditando(usuario);
+      definirIdUsuarioSelecionado(idUsuario);
+      definirExibirModalEditar(true);
+    }
+  };
+
   const fecharModalAdicionar = () => {
     definirExibirModalAdicionar(false);
+  };
+
+  const fecharModalEditar = () => {
+    definirExibirModalEditar(false);
+    setUsuarioEditando(null);
   };
 
   const handleAdicionarIndicador = async () => {
@@ -144,18 +153,16 @@ function Usuario() {
       descricao,
       sentido,
       unidadeMedida,
-      risco: { id: parseInt(riscoId) }, // Enviado como objeto com ID
-      objetivo: { id: parseInt(objetivoId) }, // Enviado como objeto com ID
-      unidadeResponsavel, // String
-      diretoriaGerencia, // String
+      risco: { id: parseInt(riscoId) },
+      objetivo: { id: parseInt(objetivoId) },
+      unidadeResponsavel,
+      diretoriaGerencia,
       indicadorExcluido: false,
     };
 
-    console.log('Payload enviado:', novoIndicador); // Para depuração
-
+    console.log('Payload enviado:', novoIndicador);
     await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador);
     fecharModalAdicionar();
-    // Resetar os campos do formulário
     setTipoIndicador('');
     setNome('');
     setDescricao('');
@@ -174,15 +181,42 @@ function Usuario() {
     }
   };
 
-  const renderizarIndicadores = () => {
-    console.log("Renderizando indicadores no momento:", indicadores);
-    if (!indicadores || indicadores.length === 0) {
-      console.log("Nenhum indicador para renderizar, indicadores:", indicadores);
-      return (
-        <tr>
-          <td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td>
-        </tr>
+  const handleSalvarPermissoes = async () => {
+    console.log('Iniciando handleSalvarPermissoes', usuarioEditando);
+    if (usuarioEditando) {
+      const usuarioCompleto = {
+        id: usuarioEditando.id,
+        nome: usuarioEditando.nome,
+        lotacao: usuarioEditando.lotacao,
+        administrador: usuarioEditando.administrador,
+        pareto: usuarioEditando.pareto,
+        atualizacaoAutomatica: usuarioEditando.atualizacaoAutomatica,
+        administradorRisco: usuarioEditando.administradorRisco
+      };
+      console.log('Enviando para manipularAlterarPermissao:', usuarioCompleto);
+      await manipularAlterarPermissao(
+        definirUsuarios,
+        usuarioEditando.id,
+        usuarioCompleto,
+        usuarios,
+        URL_ATUALIZAR_USUARIO
       );
+      console.log('Após manipularAlterarPermissao, chamando buscarUsuarios');
+      await buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
+      fecharModalEditar();
+    }
+  };
+
+  const atualizarPermissao = (permissao, valor) => {
+    if (usuarioEditando) {
+      setUsuarioEditando({ ...usuarioEditando, [permissao]: valor });
+    }
+  };
+
+  const renderizarIndicadores = () => {
+    console.log("Renderizando indicadores:", indicadores);
+    if (!indicadores || indicadores.length === 0) {
+      return <tr><td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td></tr>;
     }
     return indicadores.map(indicador => (
       <tr key={indicador.id} className="border-bottom">
@@ -202,38 +236,36 @@ function Usuario() {
   };
 
   const botoesAcaoModalIndicadores = [
-    {
-      label: 'Adicionar Indicador',
-      className: 'btn btn-primary',
-      onClick: abrirModalAdicionar
-    }
+    { label: 'Adicionar Indicador', className: 'btn btn-primary', onClick: abrirModalAdicionar }
   ];
 
   const botoesAcaoModalAdicionar = [
-    {
-      label: 'Adicionar',
-      className: 'btn btn-primary',
-      onClick: handleAdicionarIndicador
-    },
-    {
-      label: 'Sair',
-      className: 'btn btn-outline-primary btn-sair',
-      onClick: fecharModalAdicionar
-    }
+    { label: 'Adicionar', className: 'btn btn-primary', onClick: handleAdicionarIndicador },
+    { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalAdicionar }
   ];
+
+ const botoesAcaoModalEditar = [
+  {
+    label: 'Salvar',
+    className: 'btn btn-primary',
+    onClick: () => {
+      console.log('Botão Salvar clicado - iniciando handleSalvarPermissoes');
+      handleSalvarPermissoes();
+    }
+  },
+  {
+    label: 'Sair',
+    className: 'btn btn-outline-primary btn-sair',
+    onClick: fecharModalEditar
+  }
+];
 
   const renderizarFormularioAdicionar = () => {
     return (
       <div className="card-body">
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
-          <select
-            className="form-select"
-            value={tipoIndicador}
-            onChange={(e) => setTipoIndicador(e.target.value)}
-            placeholder="Tipo de Indicador*"
-            required
-          >
+          <select className="form-select" value={tipoIndicador} onChange={(e) => setTipoIndicador(e.target.value)} required>
             <option value="">Tipo de indicador*</option>
             <option value="estrategico">Estratégico</option>
             <option value="setorial">Tático</option>
@@ -243,100 +275,40 @@ function Usuario() {
           </select>
         </div>
         <div className="mb-3">
-          <input
-            type="text"
-            className="form-control"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Nome*"
-            required
-          />
+          <input type="text" className="form-control" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome*" required />
         </div>
         <div className="mb-3">
-          <input
-            type="text"
-            className="form-control"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Descrição"
-          />
+          <input type="text" className="form-control" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição" />
         </div>
         <div className="row mb-3">
           <div className="col">
-            <select
-              className="form-select"
-              value={sentido}
-              onChange={(e) => setSentido(e.target.value)}
-              placeholder="Sentido*"
-              required
-            >
+            <select className="form-select" value={sentido} onChange={(e) => setSentido(e.target.value)} required>
               <option value="">Sentido*</option>
               <option value="crescente">Quanto Maior Melhor</option>
               <option value="decrescente">Quanto Menor Melhor</option>
             </select>
           </div>
           <div className="col">
-            <input
-              type="text"
-              className="form-control"
-              value={unidadeMedida}
-              onChange={(e) => setUnidadeMedida(e.target.value)}
-              placeholder="Unidade de Medida*"
-              required
-            />
+            <input type="text" className="form-control" value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)} placeholder="Unidade de Medida*" required />
           </div>
         </div>
         <div className="mb-3">
-          <select
-            className="form-select"
-            value={riscoId}
-            onChange={(e) => setRiscoId(e.target.value)}
-            placeholder="Risco*"
-            required
-          >
+          <select className="form-select" value={riscoId} onChange={(e) => setRiscoId(e.target.value)} required>
             <option value="">Risco*</option>
-            {opcoesRisco.map((opcao) => (
-              <option key={opcao.id} value={opcao.id}>
-                {opcao.nome}
-              </option>
-            ))}
+            {opcoesRisco.map((opcao) => <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>)}
           </select>
         </div>
         <div className="mb-3">
-          <select
-            className="form-select"
-            value={objetivoId}
-            onChange={(e) => setObjetivoId(e.target.value)}
-            placeholder="Objetivo estratégico*"
-            required
-          >
+          <select className="form-select" value={objetivoId} onChange={(e) => setObjetivoId(e.target.value)} required>
             <option value="">Objetivo estratégico*</option>
-            {opcoesObjetivo.map((opcao) => (
-              <option key={opcao.id} value={opcao.id}>
-                {opcao.nome}
-              </option>
-            ))}
+            {opcoesObjetivo.map((opcao) => <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>)}
           </select>
         </div>
         <div className="mb-3">
-          <input
-            type="text"
-            className="form-control"
-            value={unidadeResponsavel}
-            onChange={(e) => setUnidadeResponsavel(e.target.value)}
-            placeholder="Unidade responsável pelo preenchimento*"
-            required
-          />
+          <input type="text" className="form-control" value={unidadeResponsavel} onChange={(e) => setUnidadeResponsavel(e.target.value)} placeholder="Unidade responsável pelo preenchimento*" required />
         </div>
         <div className="mb-3">
-          <input
-            type="text"
-            className="form-control"
-            value={diretoriaGerencia}
-            onChange={(e) => setDiretoriaGerencia(e.target.value)}
-            placeholder="Diretoria/Gerência/Coordenação*"
-            required
-          />
+          <input type="text" className="form-control" value={diretoriaGerencia} onChange={(e) => setDiretoriaGerencia(e.target.value)} placeholder="Diretoria/Gerência/Coordenação*" required />
         </div>
       </div>
     );
@@ -353,48 +325,20 @@ function Usuario() {
         <td className="py-2 px-3" style={{ verticalAlign: "middle" }}>
           <div className="d-flex flex-column">
             <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                id={`admin_${usuario.id}`}
-                name={`admin_${usuario.id}`}
-                checked={usuario.administrador}
-                onChange={() => manipularAlterarPermissao(definirUsuarios, usuario.id, 'administrador', !usuario.administrador, usuarios, URL_ATUALIZAR_USUARIO)}
-                className="form-check-input"
-              />
-              <label htmlFor={`admin_${usuario.id}`} className="form-check-label">Administrador</label>
+              {usuario.administrador ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              <span> Administrador </span>
             </div>
             <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                id={`pareto_${usuario.id}`}
-                name={`pareto_${usuario.id}`}
-                checked={usuario.pareto}
-                onChange={() => manipularAlterarPermissao(definirUsuarios, usuario.id, 'pareto', !usuario.pareto, usuarios, URL_ATUALIZAR_USUARIO)}
-                className="form-check-input"
-              />
-              <label htmlFor={`pareto_${usuario.id}`} className="form-check-label">Visualizar Pareto</label>
+              {usuario.pareto ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              <span> Visualizar Pareto </span>
             </div>
             <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                id={`atualizacao_${usuario.id}`}
-                name={`atualizacao_${usuario.id}`}
-                checked={usuario.atualizacaoAutomatica}
-                onChange={() => manipularAlterarPermissao(definirUsuarios, usuario.id, 'atualizacaoAutomatica', !usuario.atualizacaoAutomatica, usuarios, URL_ATUALIZAR_USUARIO)}
-                className="form-check-input"
-              />
-              <label htmlFor={`atualizacao_${usuario.id}`} className="form-check-label">Atualização Automática</label>
+              {usuario.atualizacaoAutomatica ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              <span> Atualização Automática </span>
             </div>
             <div className="form-check">
-              <input
-                type="checkbox"
-                id={`risco_${usuario.id}`}
-                name={`risco_${usuario.id}`}
-                checked={usuario.administradorRisco}
-                onChange={() => manipularAlterarPermissao(definirUsuarios, usuario.id, 'administradorRisco', !usuario.administradorRisco, usuarios, URL_ATUALIZAR_USUARIO)}
-                className="form-check-input"
-              />
-              <label htmlFor={`risco_${usuario.id}`} className="form-check-label">Administrador de Riscos</label>
+              {usuario.administradorRisco ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              <span> Administrador de Riscos </span>
             </div>
           </div>
         </td>
@@ -413,6 +357,7 @@ function Usuario() {
             <ul className="dropdown-menu" aria-labelledby={`menuDropdown_${usuario.id}`}>
               <li><a className="dropdown-item" href="#" onClick={() => abrirModalIndicadores(usuario.id)}>Indicadores Liberados</a></li>
               <li><a className="dropdown-item" href="#">Elementos Organizacionais Liberados</a></li>
+              <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(usuario.id)}>Editar Permissões</a></li>
               <li>
                 <button
                   className="dropdown-item text-danger"
@@ -437,9 +382,7 @@ function Usuario() {
             <h3 className="mb-0">Usuários Cadastrados</h3>
           </div>
           <div className="col-auto">
-            <a href="#" className="btn btn-primary">
-              Novo Usuário
-            </a>
+            <a href="#" className="btn btn-primary">Novo Usuário</a>
           </div>
         </div>
         <div className="card">
@@ -493,6 +436,62 @@ function Usuario() {
           botoesAcao={botoesAcaoModalAdicionar}
         >
           {renderizarFormularioAdicionar()}
+        </Modal>
+        <Modal
+          estaAberto={exibirModalEditar}
+          aoFechar={fecharModalEditar}
+          titulo={`Editar Permissões - Usuário ID: ${idUsuarioSelecionado}`}
+          botoesAcao={botoesAcaoModalEditar}
+        >
+          {usuarioEditando && (
+            <div className="card-body">
+              <div className="mb-3">
+                <label className="form-label">Nome:</label>
+                <input type="text" className="form-control" value={usuarioEditando.nome || ''} readOnly />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Lotação:</label>
+                <input type="text" className="form-control" value={usuarioEditando.lotacao || 'Não especificada'} readOnly />
+              </div>
+              <h5>Permissões de Acesso</h5>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.administrador}
+                  onChange={(e) => atualizarPermissao('administrador', e.target.checked)}
+                />
+                <label className="form-check-label">Administrador</label>
+              </div>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.pareto}
+                  onChange={(e) => atualizarPermissao('pareto', e.target.checked)}
+                />
+                <label className="form-check-label">Visualizar Pareto</label>
+              </div>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.atualizacaoAutomatica}
+                  onChange={(e) => atualizarPermissao('atualizacaoAutomatica', e.target.checked)}
+                />
+                <label className="form-check-label">Atualização Automática</label>
+              </div>
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.administradorRisco}
+                  onChange={(e) => atualizarPermissao('administradorRisco', e.target.checked)}
+                />
+                <label className="form-check-label">Administrador de Riscos</label>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
       <Rodape />

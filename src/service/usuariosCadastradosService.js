@@ -185,51 +185,54 @@ export const manipularExcluirIndicador = async (definirIndicadores, idUsuarioSel
   }
 };
 
-export const manipularAlterarPermissao = async (definirUsuarios, idUsuario, permissao, valor, usuarios, URL_ATUALIZAR_USUARIO) => {
-  const usuarioAtualizado = usuarios.find(usuario => usuario.id === idUsuario);
-  if (!usuarioAtualizado) return;
-
-  const usuarioParaAtualizar = {
-    id: usuarioAtualizado.id,
-    nome: usuarioAtualizado.nome,
-    login: usuarioAtualizado.login || '',
-    lotacaoAtual: usuarioAtualizado.lotacao,
-    administrador: permissao === 'administrador' ? valor : usuarioAtualizado.administrador,
-    pareto: permissao === 'pareto' ? valor : usuarioAtualizado.pareto,
-    atualizarLotAutomatica: permissao === 'atualizacaoAutomatica' ? valor : usuarioAtualizado.atualizacaoAutomatica,
-    administradorRisco: permissao === 'administradorRisco' ? valor : usuarioAtualizado.administradorRisco
-  };
-
+export const manipularAlterarPermissao = async (definirUsuarios, idUsuario, usuarioAtualizado, usuarios, URL_ATUALIZAR_USUARIO) => {
+  console.log('Iniciando manipularAlterarPermissao para id:', idUsuario, 'com dados:', usuarioAtualizado);
   try {
     const token = localStorage.getItem('token');
-    const resposta = await fetch(URL_ATUALIZAR_USUARIO, {
+    console.log('Token extraído do localStorage:', token ? token.substring(0, 10) + '...' : 'NULL/EMPTY');
+    if (!token) {
+      console.error('Nenhum token encontrado no localStorage - redirecionando para login');
+      throw new Error('Token de autenticação ausente - faça login novamente');
+    }
+    console.log('Enviando requisição para:', URL_ATUALIZAR_USUARIO, 'com header Authorization: Bearer', token.substring(0, 10) + '...');
+
+    const body = JSON.stringify([usuarioAtualizado]);
+    console.log('Body da requisição:', body);
+
+    const response = await fetch(URL_ATUALIZAR_USUARIO, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(usuarioParaAtualizar)
+      headers: {
+        'Authorization': `Bearer ${token}`, // Garantindo que não há espaços extras
+        'Content-Type': 'application/json'
+      },
+      body: body
     });
 
-    if (!resposta.ok) {
-      const textoErro = await resposta.text();
-      throw new Error(`Erro ao atualizar: ${resposta.status} - ${textoErro}`);
+    console.log('Resposta recebida - status:', response.status, 'statusText:', response.statusText);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Erro na resposta (corpo completo):', text);
+      throw new Error(`Erro ao atualizar: ${response.status} - ${text}`);
     }
 
-    const dadosAtualizados = await resposta.json();
+    const data = await response.json();
+    console.log('Dados atualizados recebidos:', data);
     const usuarioMapeadoAtualizado = {
-      id: dadosAtualizados.id,
-      nome: dadosAtualizados.nome,
-      lotacao: dadosAtualizados.lotacaoAtual || 'Não especificada',
-      administrador: dadosAtualizados.administrador,
-      pareto: dadosAtualizados.pareto,
-      atualizacaoAutomatica: dadosAtualizados.atualizarLotAutomatica,
-      administradorRisco: dadosAtualizados.administradorRisco
+      id: data[0].id,
+      nome: data[0].nome,
+      lotacao: data[0].lotacaoAtual || 'Não especificada',
+      administrador: data[0].administrador,
+      pareto: data[0].pareto,
+      atualizacaoAutomatica: data[0].atualizarLotAutomatica,
+      administradorRisco: data[0].administradorRisco
     };
     definirUsuarios(usuarios.map(usuario => usuario.id === idUsuario ? usuarioMapeadoAtualizado : usuario));
-    console.log(`Permissão ${permissao} atualizada para ${valor} no usuário ${idUsuario}`);
-  } catch (erro) {
-    console.error('Erro ao atualizar permissão:', erro);
-    alert('Falha ao atualizar a permissão. Tente novamente.');
+    console.log('Usuários atualizados no estado:', usuarios);
+  } catch (error) {
+    console.error('Erro ao atualizar permissão (detalhado):', error.message, error.stack);
+    alert('Falha ao atualizar a permissão. Verifique o console para detalhes. Pode ser necessário fazer login novamente.');
     definirUsuarios(usuarios.map(usuario =>
-      usuario.id === idUsuario ? { ...usuario, [permissao]: !valor } : usuario
+      usuario.id === idUsuario ? { ...usuario, ...usuarioAtualizado } : usuario
     ));
   }
 };
