@@ -46,6 +46,8 @@ function Usuario() {
   const [objetivoId, setObjetivoId] = useState('');
   const [unidadeResponsavel, setUnidadeResponsavel] = useState('');
   const [diretoriaGerencia, setDiretoriaGerencia] = useState('');
+  const [anoSelecionado, setAnoSelecionado] = useState(''); // Sem valor padrão, usaremos placeholder
+  const anoAtual = new Date().getFullYear(); // Ano atual dinâmico
   const [mensagemErro, setMensagemErro] = useState('');
 
   // Estados para opções carregadas via API
@@ -65,30 +67,47 @@ function Usuario() {
         return;
       }
 
-      const ano = 2025;
+      // Só carrega se um ano estiver selecionado
+      if (!anoSelecionado) {
+        setOpcoesRisco([{ id: 1, nome: 'Selecione um ano primeiro' }]);
+        setOpcoesObjetivo([{ id: 1, nome: 'Selecione um ano primeiro' }]);
+        return;
+      }
+
       try {
+        console.log('Iniciando requisições para riscos e objetivos, ano:', anoSelecionado);
         const [riscoResp, objetivoResp] = await Promise.all([
-          fetch(`${URL_RISCO}?ano=${ano}`, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
-          fetch(`${URL_OBJETIVO}?ano=${ano}`, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }),
+          fetch(`${URL_RISCO}/${anoSelecionado}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          }),
+          fetch(`${URL_OBJETIVO}/${anoSelecionado}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          }),
         ]);
 
-        if (!riscoResp.ok) throw new Error(`Erro ao carregar riscos: ${riscoResp.status}`);
-        if (!objetivoResp.ok) throw new Error(`Erro ao carregar objetivos: ${objetivoResp.status}`);
+        const riscoText = await riscoResp.text();
+        const objetivoText = await objetivoResp.text();
+        console.log('Resposta bruta de riscos:', riscoText);
+        console.log('Resposta bruta de objetivos:', objetivoText);
 
-        const [riscoData, objetivoData] = await Promise.all([riscoResp.json(), objetivoResp.json()]);
-        const riscosFiltrados = riscoData.filter(r => !r.removido);
-        const objetivosFiltrados = objetivoData.filter(o => !o.removido);
-        setOpcoesRisco(riscosFiltrados);
-        setOpcoesObjetivo(objetivosFiltrados);
+        if (!riscoResp.ok) throw new Error(`Erro ao carregar riscos: ${riscoResp.status} - ${riscoText}`);
+        if (!objetivoResp.ok) throw new Error(`Erro ao carregar objetivos: ${objetivoResp.status} - ${objetivoText}`);
+
+        const [riscoData, objetivoData] = await Promise.all([JSON.parse(riscoText), JSON.parse(objetivoText)]);
+        const riscosFiltrados = Array.isArray(riscoData) ? riscoData.filter(r => !r.removido).map(r => ({ id: r.id, nome: r.nome })) : [];
+        const objetivosFiltrados = Array.isArray(objetivoData) ? objetivoData.filter(o => !o.removido).map(o => ({ id: o.id, nome: o.nome })) : [];
+
+        setOpcoesRisco(riscosFiltrados.length > 0 ? riscosFiltrados : [{ id: 1, nome: 'Nenhum risco disponível' }]);
+        setOpcoesObjetivo(objetivosFiltrados.length > 0 ? objetivosFiltrados : [{ id: 1, nome: 'Nenhum objetivo disponível' }]);
       } catch (erro) {
         console.error('Erro ao carregar opções:', erro.message);
-        setOpcoesRisco([{ id: 1, nome: 'Baixo' }, { id: 2, nome: 'Médio' }, { id: 3, nome: 'Alto' }]);
-        setOpcoesObjetivo([{ id: 1, nome: 'Crescimento' }, { id: 2, nome: 'Sustentabilidade' }]);
+        setOpcoesRisco([{ id: 1, nome: 'Erro ao carregar riscos' }]);
+        setOpcoesObjetivo([{ id: 1, nome: 'Erro ao carregar objetivos' }]);
       }
     };
 
     carregarOpcoes();
-  }, [paginaAtual, tamanhoPagina]);
+  }, [paginaAtual, tamanhoPagina, anoSelecionado]);
 
   useEffect(() => {
     const carregarIndicadores = async () => {
@@ -120,6 +139,7 @@ function Usuario() {
     setUnidadeResponsavel('');
     setDiretoriaGerencia('');
     setMensagemErro('');
+    setAnoSelecionado(''); // Reset para placeholder
     definirExibirModalAdicionar(true);
   };
 
@@ -244,29 +264,38 @@ function Usuario() {
     { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalAdicionar }
   ];
 
- const botoesAcaoModalEditar = [
-  {
-    label: 'Salvar',
-    className: 'btn btn-primary',
-    onClick: () => {
-      console.log('Botão Salvar clicado - iniciando handleSalvarPermissoes');
-      handleSalvarPermissoes();
+  const botoesAcaoModalEditar = [
+    {
+      label: 'Salvar',
+      className: 'btn btn-primary',
+      onClick: () => {
+        console.log('Botão Salvar clicado - iniciando handleSalvarPermissoes');
+        handleSalvarPermissoes();
+      }
+    },
+    {
+      label: 'Sair',
+      className: 'btn btn-outline-primary btn-sair',
+      onClick: fecharModalEditar
     }
-  },
-  {
-    label: 'Sair',
-    className: 'btn btn-outline-primary btn-sair',
-    onClick: fecharModalEditar
-  }
-];
+  ];
 
   const renderizarFormularioAdicionar = () => {
     return (
       <div className="card-body">
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
+          <label className="form-label">Ano:</label>
+          <select className="form-select" value={anoSelecionado} onChange={(e) => setAnoSelecionado(e.target.value)} required>
+            <option value="" disabled>Ano*</option>
+            {Array.from({ length: anoAtual - 2021 }, (_, i) => 2022 + i).map(ano => (
+              <option key={ano} value={ano}>{ano}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-3">
           <select className="form-select" value={tipoIndicador} onChange={(e) => setTipoIndicador(e.target.value)} required>
-            <option value="">Tipo de indicador*</option>
+            <option value="" disabled>Tipo de indicador*</option>
             <option value="estrategico">Estratégico</option>
             <option value="setorial">Tático</option>
             <option value="premissa">Premissa</option>
@@ -283,7 +312,7 @@ function Usuario() {
         <div className="row mb-3">
           <div className="col">
             <select className="form-select" value={sentido} onChange={(e) => setSentido(e.target.value)} required>
-              <option value="">Sentido*</option>
+              <option value="" disabled>Sentido*</option>
               <option value="crescente">Quanto Maior Melhor</option>
               <option value="decrescente">Quanto Menor Melhor</option>
             </select>
@@ -300,7 +329,7 @@ function Usuario() {
         </div>
         <div className="mb-3">
           <select className="form-select" value={objetivoId} onChange={(e) => setObjetivoId(e.target.value)} required>
-            <option value="">Objetivo estratégico*</option>
+            <option value="" disabled>Objetivo estratégico*</option>
             {opcoesObjetivo.map((opcao) => <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>)}
           </select>
         </div>
@@ -325,19 +354,19 @@ function Usuario() {
         <td className="py-2 px-3" style={{ verticalAlign: "middle" }}>
           <div className="d-flex flex-column">
             <div className="form-check mb-2">
-              {usuario.administrador ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              {usuario.administrador ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
               <span> Administrador </span>
             </div>
             <div className="form-check mb-2">
-              {usuario.pareto ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              {usuario.pareto ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
               <span> Visualizar Pareto </span>
             </div>
             <div className="form-check mb-2">
-              {usuario.atualizacaoAutomatica ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              {usuario.atualizacaoAutomatica ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
               <span> Atualização Automática </span>
             </div>
             <div className="form-check">
-              {usuario.administradorRisco ? <FaCheck className="FaCheck text-success"/> : <FaTimes className="FaTimes text-danger"/>}
+              {usuario.administradorRisco ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
               <span> Administrador de Riscos </span>
             </div>
           </div>
@@ -413,7 +442,7 @@ function Usuario() {
         <Modal
           estaAberto={exibirModalIndicadores}
           aoFechar={() => definirExibirModalIndicadores(false)}
-          titulo={`Indicadores Liberados - Usuário ID: ${idUsuarioSelecionado}`}
+          titulo={`Indicadores Liberados`}
           botoesAcao={botoesAcaoModalIndicadores}
         >
           <div className="card-body">
@@ -432,7 +461,7 @@ function Usuario() {
         <Modal
           estaAberto={exibirModalAdicionar}
           aoFechar={fecharModalAdicionar}
-          titulo={`Adicionar Indicador - Usuário ID: ${idUsuarioSelecionado}`}
+          titulo={`Adicionar Indicador`}
           botoesAcao={botoesAcaoModalAdicionar}
         >
           {renderizarFormularioAdicionar()}
@@ -440,7 +469,7 @@ function Usuario() {
         <Modal
           estaAberto={exibirModalEditar}
           aoFechar={fecharModalEditar}
-          titulo={`Editar Permissões - Usuário ID: ${idUsuarioSelecionado}`}
+          titulo={`Editar Permissões`}
           botoesAcao={botoesAcaoModalEditar}
         >
           {usuarioEditando && (
