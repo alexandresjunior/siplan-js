@@ -15,10 +15,9 @@ import {
 
 // URL base da API
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
-const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuarios'; // Alterado para o endpoint de lista
+const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip/excluir';
-// Endpoints ajustados para query parameter
 const URL_RISCO = 'http://localhost:8098/risco/list-by-ano';
 const URL_OBJETIVO = 'http://localhost:8098/objetivo/list-by-ano';
 
@@ -46,13 +45,16 @@ function Usuario() {
   const [objetivoId, setObjetivoId] = useState('');
   const [unidadeResponsavel, setUnidadeResponsavel] = useState('');
   const [diretoriaGerencia, setDiretoriaGerencia] = useState('');
-  const [anoSelecionado, setAnoSelecionado] = useState(''); // Sem valor padrão, usaremos placeholder
+  const [mensagemErro, setMensagemErro] = useState(''); // Adicionado
+  const [anoOrganograma, setAnoOrganograma] = useState('');
+  const [diretoria, setDiretoria] = useState('');
+  const [gerencia, setGerencia] = useState('');
   const anoAtual = new Date().getFullYear(); // Ano atual dinâmico
-  const [mensagemErro, setMensagemErro] = useState('');
-
-  // Estados para opções carregadas via API
-  const [opcoesRisco, setOpcoesRisco] = useState([]);
-  const [opcoesObjetivo, setOpcoesObjetivo] = useState([]);
+  const [opcoesDiretoria, setOpcoesDiretoria] = useState([]); // Diretorias carregadas
+  const [opcoesIndicadores, setOpcoesIndicadores] = useState([]); // Indicadores disponíveis
+  const [indicadorSelecionado, setIndicadorSelecionado] = useState(''); // ID do indicador selecionado
+  const [permissoes, setPermissoes] = useState({});
+  const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false);
 
   // Estados para o modal de edição de permissões
   const [usuarioEditando, setUsuarioEditando] = useState(null);
@@ -60,57 +62,39 @@ function Usuario() {
   useEffect(() => {
     buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
 
-    const carregarOpcoes = async () => {
+    const carregarOpcoesDiretoria = async () => {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.warn('Nenhum token encontrado.');
-        return;
-      }
-
-      // Só carrega se um ano estiver selecionado
-      if (!anoSelecionado) {
-        setOpcoesRisco([{ id: 1, nome: 'Selecione um ano primeiro' }]);
-        setOpcoesObjetivo([{ id: 1, nome: 'Selecione um ano primeiro' }]);
+      if (!token || !anoOrganograma) {
+        console.warn('Token ou anoOrganograma não encontrado.');
         return;
       }
 
       try {
-        console.log('Iniciando requisições para riscos e objetivos, ano:', anoSelecionado);
-        const [riscoResp, objetivoResp] = await Promise.all([
-          fetch(`${URL_RISCO}/${anoSelecionado}`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          }),
-          fetch(`${URL_OBJETIVO}/${anoSelecionado}`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          }),
-        ]);
+        const diretoriaResp = await fetch(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        const diretoriaText = await diretoriaResp.text();
+        console.log('Resposta bruta de diretorias:', diretoriaText);
 
-        const riscoText = await riscoResp.text();
-        const objetivoText = await objetivoResp.text();
-        console.log('Resposta bruta de riscos:', riscoText);
-        console.log('Resposta bruta de objetivos:', objetivoText);
+        if (!diretoriaResp.ok) throw new Error(`Erro ao carregar diretorias: ${diretoriaResp.status} - ${diretoriaText}`);
 
-        if (!riscoResp.ok) throw new Error(`Erro ao carregar riscos: ${riscoResp.status} - ${riscoText}`);
-        if (!objetivoResp.ok) throw new Error(`Erro ao carregar objetivos: ${objetivoResp.status} - ${objetivoText}`);
+        const diretoriaData = JSON.parse(diretoriaText);
+        console.log('Diretorias retornadas (parsed):', diretoriaData);
 
-        const [riscoData, objetivoData] = await Promise.all([JSON.parse(riscoText), JSON.parse(objetivoText)]);
-        const riscosFiltrados = Array.isArray(riscoData) ? riscoData.filter(r => !r.removido).map(r => ({ id: r.id, nome: r.nome })) : [];
-        const objetivosFiltrados = Array.isArray(objetivoData) ? objetivoData.filter(o => !o.removido).map(o => ({ id: o.id, nome: o.nome })) : [];
-
-        setOpcoesRisco(riscosFiltrados.length > 0 ? riscosFiltrados : [{ id: 1, nome: 'Nenhum risco disponível' }]);
-        setOpcoesObjetivo(objetivosFiltrados.length > 0 ? objetivosFiltrados : [{ id: 1, nome: 'Nenhum objetivo disponível' }]);
+        const diretoriasFiltradas = Array.isArray(diretoriaData) ? diretoriaData.map(d => ({ id: d.id, nome: d.nome || d.descricao || 'Sem nome' })) : [];
+        setOpcoesDiretoria(diretoriasFiltradas.length > 0 ? diretoriasFiltradas : [{ id: '', nome: 'Nenhuma diretoria disponível' }]);
       } catch (erro) {
-        console.error('Erro ao carregar opções:', erro.message);
-        setOpcoesRisco([{ id: 1, nome: 'Erro ao carregar riscos' }]);
-        setOpcoesObjetivo([{ id: 1, nome: 'Erro ao carregar objetivos' }]);
+        console.error('Erro ao carregar diretorias:', erro.message);
+        setOpcoesDiretoria([{ id: '', nome: 'Erro ao carregar diretorias' }]);
       }
     };
 
-    carregarOpcoes();
-  }, [paginaAtual, tamanhoPagina, anoSelecionado]);
+    carregarOpcoesDiretoria();
+  }, [paginaAtual, tamanhoPagina, anoOrganograma]);
 
   useEffect(() => {
     const carregarIndicadores = async () => {
+      console.log("Estado do modal:", exibirModalIndicadores, "ID selecionado:", idUsuarioSelecionado);
       if (exibirModalIndicadores && idUsuarioSelecionado) {
         posicaoRolagem.current = window.scrollY;
         console.log("Buscando indicadores para ID:", idUsuarioSelecionado);
@@ -129,17 +113,10 @@ function Usuario() {
   };
 
   const abrirModalAdicionar = () => {
-    setTipoIndicador('');
-    setNome('');
-    setDescricao('');
-    setSentido('');
-    setUnidadeMedida('');
-    setRiscoId('');
-    setObjetivoId('');
-    setUnidadeResponsavel('');
-    setDiretoriaGerencia('');
+    setAnoOrganograma('');
+    setDiretoria('');
+    setGerencia('');
     setMensagemErro('');
-    setAnoSelecionado(''); // Reset para placeholder
     definirExibirModalAdicionar(true);
   };
 
@@ -162,36 +139,26 @@ function Usuario() {
   };
 
   const handleAdicionarIndicador = async () => {
-    if (!tipoIndicador || !nome || !sentido || !unidadeMedida || !riscoId || !objetivoId || !unidadeResponsavel || !diretoriaGerencia) {
+    if (!anoOrganograma || !diretoria || !gerencia || !indicadorSelecionado) {
       setMensagemErro('Todos os campos obrigatórios devem ser preenchidos.');
       return;
     }
 
-    const novoIndicador = {
-      nome,
-      tipo: tipoIndicador,
-      descricao,
-      sentido,
-      unidadeMedida,
-      risco: { id: parseInt(riscoId) },
-      objetivo: { id: parseInt(objetivoId) },
-      unidadeResponsavel,
-      diretoriaGerencia,
-      indicadorExcluido: false,
+    const payload = {
+      anoOrganograma: parseInt(anoOrganograma),
+      diretoriaId: parseInt(diretoria),
+      gerencia: gerencia,
+      usuarioId: idUsuarioSelecionado,
+      indicadorId: parseInt(indicadorSelecionado)
     };
 
-    console.log('Payload enviado:', novoIndicador);
-    await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador);
+    console.log('Payload enviado:', payload);
+    await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
     fecharModalAdicionar();
-    setTipoIndicador('');
-    setNome('');
-    setDescricao('');
-    setSentido('');
-    setUnidadeMedida('');
-    setRiscoId('');
-    setObjetivoId('');
-    setUnidadeResponsavel('');
-    setDiretoriaGerencia('');
+    setAnoOrganograma('');
+    setDiretoria('');
+    setGerencia('');
+    setIndicadorSelecionado('');
     setMensagemErro('');
   };
 
@@ -202,28 +169,9 @@ function Usuario() {
   };
 
   const handleSalvarPermissoes = async () => {
-    console.log('Iniciando handleSalvarPermissoes', usuarioEditando);
-    if (usuarioEditando) {
-      const usuarioCompleto = {
-        id: usuarioEditando.id,
-        nome: usuarioEditando.nome,
-        lotacao: usuarioEditando.lotacao,
-        administrador: usuarioEditando.administrador,
-        pareto: usuarioEditando.pareto,
-        atualizacaoAutomatica: usuarioEditando.atualizacaoAutomatica,
-        administradorRisco: usuarioEditando.administradorRisco
-      };
-      console.log('Enviando para manipularAlterarPermissao:', usuarioCompleto);
-      await manipularAlterarPermissao(
-        definirUsuarios,
-        usuarioEditando.id,
-        usuarioCompleto,
-        usuarios,
-        URL_ATUALIZAR_USUARIO
-      );
-      console.log('Após manipularAlterarPermissao, chamando buscarUsuarios');
-      await buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
-      fecharModalEditar();
+    if (idUsuarioSelecionado && permissoes) {
+      await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes);
+      setExibirModalPermissoes(false); // Fecha o modal após salvar
     }
   };
 
@@ -260,7 +208,7 @@ function Usuario() {
   ];
 
   const botoesAcaoModalAdicionar = [
-    { label: 'Adicionar', className: 'btn btn-primary', onClick: handleAdicionarIndicador },
+    { label: 'Salvar', className: 'btn btn-primary', onClick: handleAdicionarIndicador },
     { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalAdicionar }
   ];
 
@@ -285,59 +233,35 @@ function Usuario() {
       <div className="card-body">
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
-          <label className="form-label">Ano:</label>
-          <select className="form-select" value={anoSelecionado} onChange={(e) => setAnoSelecionado(e.target.value)} required>
-            <option value="" disabled>Ano*</option>
+          <label className="form-label">Ano Organograma:</label>
+          <select className="form-select" value={anoOrganograma} onChange={(e) => setAnoOrganograma(e.target.value)} required>
+            <option value="" disabled>Ano Organograma*</option>
             {Array.from({ length: anoAtual - 2021 }, (_, i) => 2022 + i).map(ano => (
               <option key={ano} value={ano}>{ano}</option>
             ))}
           </select>
         </div>
         <div className="mb-3">
-          <select className="form-select" value={tipoIndicador} onChange={(e) => setTipoIndicador(e.target.value)} required>
-            <option value="" disabled>Tipo de indicador*</option>
-            <option value="estrategico">Estratégico</option>
-            <option value="setorial">Tático</option>
-            <option value="premissa">Premissa</option>
-            <option value="variavel">Variável</option>
-            <option value="operacional">Operacional</option>
+          <label className="form-label">Diretoria:</label>
+          <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value)} required>
+            <option value="" disabled>Diretoria*</option>
+            {opcoesDiretoria.map((opcao) => (
+              <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
+            ))}
           </select>
         </div>
         <div className="mb-3">
-          <input type="text" className="form-control" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome*" required />
+          <label className="form-label">Gerência:</label>
+          <input type="text" className="form-control" value={gerencia} onChange={(e) => setGerencia(e.target.value)} placeholder="Gerência*" required />
         </div>
         <div className="mb-3">
-          <input type="text" className="form-control" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição" />
-        </div>
-        <div className="row mb-3">
-          <div className="col">
-            <select className="form-select" value={sentido} onChange={(e) => setSentido(e.target.value)} required>
-              <option value="" disabled>Sentido*</option>
-              <option value="crescente">Quanto Maior Melhor</option>
-              <option value="decrescente">Quanto Menor Melhor</option>
-            </select>
-          </div>
-          <div className="col">
-            <input type="text" className="form-control" value={unidadeMedida} onChange={(e) => setUnidadeMedida(e.target.value)} placeholder="Unidade de Medida*" required />
-          </div>
-        </div>
-        <div className="mb-3">
-          <select className="form-select" value={riscoId} onChange={(e) => setRiscoId(e.target.value)} required>
-            <option value="">Risco*</option>
-            {opcoesRisco.map((opcao) => <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>)}
+          <label className="form-label">Indicador:</label>
+          <select className="form-select" value={indicadorSelecionado} onChange={(e) => setIndicadorSelecionado(e.target.value)} required>
+            <option value="" disabled>Selecione um indicador*</option>
+            {opcoesIndicadores.map((opcao) => (
+              <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
+            ))}
           </select>
-        </div>
-        <div className="mb-3">
-          <select className="form-select" value={objetivoId} onChange={(e) => setObjetivoId(e.target.value)} required>
-            <option value="" disabled>Objetivo estratégico*</option>
-            {opcoesObjetivo.map((opcao) => <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>)}
-          </select>
-        </div>
-        <div className="mb-3">
-          <input type="text" className="form-control" value={unidadeResponsavel} onChange={(e) => setUnidadeResponsavel(e.target.value)} placeholder="Unidade responsável pelo preenchimento*" required />
-        </div>
-        <div className="mb-3">
-          <input type="text" className="form-control" value={diretoriaGerencia} onChange={(e) => setDiretoriaGerencia(e.target.value)} placeholder="Diretoria/Gerência/Coordenação*" required />
         </div>
       </div>
     );

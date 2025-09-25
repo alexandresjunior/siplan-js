@@ -1,4 +1,3 @@
-// usuariosCadastradosService.js (ajustado)
 export const buscarUsuarios = async (definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API) => {
   definirCarregando(true);
   try {
@@ -45,6 +44,11 @@ export const buscarUsuarios = async (definirCarregando, definirUsuarios, definir
 export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('Nenhum token encontrado. Redirecione para login.');
+      alert('Você precisa estar logado para acessar esta página.');
+      return;
+    }
     const resposta = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -52,7 +56,8 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
       }
     });
     if (!resposta.ok) {
-      throw new Error(`Erro ao carregar indicadores: ${resposta.status}`);
+      const textoErro = await resposta.text();
+      throw new Error(`Erro HTTP: ${resposta.status} - ${textoErro}`);
     }
     const dadosUsuario = await resposta.json();
     console.log('Resposta bruta da API:', dadosUsuario);
@@ -68,6 +73,9 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
     definirIndicadores(indicadoresNaoExcluidos);
   } catch (erro) {
     console.error('Erro ao carregar indicadores:', erro);
+    if (erro.message.includes('403')) {
+      alert('Acesso negado (403). Verifique o token ou permissões.');
+    }
   }
 };
 
@@ -75,85 +83,43 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
   try {
     const token = localStorage.getItem('token');
 
-    // Determinar o endpoint com base no tipo de indicador
-    let endpoint = '';
-    let indicadorPayload = {
-      nomeIndicador: novoIndicador.nome,
-      tipoIndicador: novoIndicador.tipo,
-      sentidoIndicador: novoIndicador.sentido,
-      unidadeMedida: novoIndicador.unidadeMedida,
-      descricao: novoIndicador.descricao || null,
-      dataCriacao: new Date().toISOString(),
-      indicadorExcluido: false,
-    };
-
-    switch (novoIndicador.tipo) {
-      case 'manual':
-        endpoint = 'http://localhost:8098/indicador/manual';
-        break;
-      case 'automatico':
-        endpoint = 'http://localhost:8098/indicador/automatico';
-        break;
-      case 'variavel':
-        endpoint = 'http://localhost:8098/indicador/variavel';
-        break;
-      case 'premissa':
-        endpoint = 'http://localhost:8098/indicador/premissa';
-        break;
-      default:
-        throw new Error('Tipo de indicador inválido');
-    }
-
-    // Adicionar campos relacionais (simplificados)
-    indicadorPayload.risco = { nome: novoIndicador.risco };
-    indicadorPayload.objetivo = { nome: novoIndicador.objetivoEstrategico };
-    indicadorPayload.elementoOrganizacionalResp = { nome: novoIndicador.unidadeResponsavel };
-
-    // Enviar o novo indicador ao backend
-    const respostaIndicador = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(indicadorPayload)
-    });
-
-    if (!respostaIndicador.ok) {
-      const textoErro = await respostaIndicador.text();
-      throw new Error(`Erro ao criar indicador: ${respostaIndicador.status} - ${textoErro}`);
-    }
-
-    const dadosIndicador = await respostaIndicador.json();
-    const novoIdIndicador = dadosIndicador.id; // O backend retorna o ID gerado
-
-    // Atualizar o usuário para incluir o novo indicador
+    // Buscar dados do usuário para atualizar
     const respostaUsuario = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     if (!respostaUsuario.ok) throw new Error('Erro ao buscar usuário');
     const dadosUsuario = await respostaUsuario.json();
+    console.log('Dados do usuário antes da atualização:', dadosUsuario);
 
+    // Adicionar o indicador ao conjunto de indicadores liberados
     const indicadoresAtualizados = [...(dadosUsuario.indicadoresLiberados || []), {
-      id: novoIdIndicador,
-      nomeIndicador: novoIndicador.nome,
-      tipoIndicador: novoIndicador.tipo,
+      id: novoIndicador.indicadorId,
       indicadorExcluido: false
     }];
 
-    const usuarioAtualizado = { ...dadosUsuario, indicadoresLiberados: indicadoresAtualizados };
+    // Criar usuarioAtualizado, convertendo lotacaoAtual para string (usando o id)
+    const usuarioAtualizado = {
+      ...dadosUsuario,
+      indicadoresLiberados: indicadoresAtualizados,
+      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null // Converte para string do ID
+    };
+    const payload = [usuarioAtualizado]; // Array explícita
+    console.log('Payload bruto antes do stringify:', payload);
+    console.log('Payload enviado para atualização:', JSON.stringify(payload, null, 2));
 
+    // Enviar atualização com método POST
     const respostaAtualizacao = await fetch(URL_ATUALIZAR_USUARIO, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(usuarioAtualizado)
+      body: JSON.stringify(payload)
     });
     if (!respostaAtualizacao.ok) {
       const textoErro = await respostaAtualizacao.text();
+      console.error('Erro na resposta do backend:', textoErro);
       throw new Error(`Erro ao atualizar usuário: ${respostaAtualizacao.status} - ${textoErro}`);
     }
 
-    // Recarregar os indicadores após sucesso
+    console.log('Resposta da atualização:', await respostaAtualizacao.json());
     await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
   } catch (erro) {
     console.error('Erro ao adicionar indicador:', erro);
@@ -185,55 +151,88 @@ export const manipularExcluirIndicador = async (definirIndicadores, idUsuarioSel
   }
 };
 
-export const manipularAlterarPermissao = async (definirUsuarios, idUsuario, usuarioAtualizado, usuarios, URL_ATUALIZAR_USUARIO) => {
-  console.log('Iniciando manipularAlterarPermissao para id:', idUsuario, 'com dados:', usuarioAtualizado);
+export const buscarPermissoes = async (definirPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID) => {
   try {
     const token = localStorage.getItem('token');
-    console.log('Token extraído do localStorage:', token ? token.substring(0, 10) + '...' : 'NULL/EMPTY');
     if (!token) {
-      console.error('Nenhum token encontrado no localStorage - redirecionando para login');
-      throw new Error('Token de autenticação ausente - faça login novamente');
+      console.warn('Nenhum token encontrado. Redirecione para login.');
+      alert('Você precisa estar logado para acessar esta página.');
+      return;
     }
-    console.log('Enviando requisição para:', URL_ATUALIZAR_USUARIO, 'com header Authorization: Bearer', token.substring(0, 10) + '...');
 
-    const body = JSON.stringify([usuarioAtualizado]);
-    console.log('Body da requisição:', body);
-
-    const response = await fetch(URL_ATUALIZAR_USUARIO, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`, // Garantindo que não há espaços extras
-        'Content-Type': 'application/json'
-      },
-      body: body
+    const resposta = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
-
-    console.log('Resposta recebida - status:', response.status, 'statusText:', response.statusText);
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('Erro na resposta (corpo completo):', text);
-      throw new Error(`Erro ao atualizar: ${response.status} - ${text}`);
+    if (!resposta.ok) {
+      const textoErro = await resposta.text();
+      throw new Error(`Erro ao carregar permissões: ${resposta.status} - ${textoErro}`);
     }
 
-    const data = await response.json();
-    console.log('Dados atualizados recebidos:', data);
-    const usuarioMapeadoAtualizado = {
-      id: data[0].id,
-      nome: data[0].nome,
-      lotacao: data[0].lotacaoAtual || 'Não especificada',
-      administrador: data[0].administrador,
-      pareto: data[0].pareto,
-      atualizacaoAutomatica: data[0].atualizarLotAutomatica,
-      administradorRisco: data[0].administradorRisco
+    const dadosUsuario = await resposta.json();
+    console.log('Dados do usuário com permissões:', dadosUsuario);
+
+    // Extrair permissões relevantes
+    const permissoes = {
+      administrador: dadosUsuario.administrador || false,
+      administradorRisco: dadosUsuario.administradorRisco || false,
+      pareto: dadosUsuario.pareto || false,
+      atualizarLotAutomatica: dadosUsuario.atualizarLotAutomatica || false
     };
-    definirUsuarios(usuarios.map(usuario => usuario.id === idUsuario ? usuarioMapeadoAtualizado : usuario));
-    console.log('Usuários atualizados no estado:', usuarios);
-  } catch (error) {
-    console.error('Erro ao atualizar permissão (detalhado):', error.message, error.stack);
-    alert('Falha ao atualizar a permissão. Verifique o console para detalhes. Pode ser necessário fazer login novamente.');
-    definirUsuarios(usuarios.map(usuario =>
-      usuario.id === idUsuario ? { ...usuario, ...usuarioAtualizado } : usuario
-    ));
+    definirPermissoes(permissoes);
+  } catch (erro) {
+    console.error('Erro ao carregar permissões:', erro);
+  }
+};
+
+export const manipularAlterarPermissao = async (definirPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('Nenhum token encontrado. Redirecione para login.');
+      alert('Você precisa estar logado para acessar esta página.');
+      return;
+    }
+
+    // Buscar dados do usuário para atualizar
+    const respostaUsuario = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    if (!respostaUsuario.ok) throw new Error('Erro ao buscar usuário');
+    const dadosUsuario = await respostaUsuario.json();
+    console.log('Dados do usuário antes da atualização:', dadosUsuario);
+
+    // Preparar o payload com as permissões atualizadas
+    const usuarioAtualizado = {
+      ...dadosUsuario,
+      administrador: permissoes.administrador,
+      administradorRisco: permissoes.administradorRisco,
+      pareto: permissoes.pareto,
+      atualizarLotAutomatica: permissoes.atualizarLotAutomatica,
+      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null
+    };
+    console.log('Payload bruto antes do stringify:', usuarioAtualizado);
+    console.log('Payload enviado para atualização:', JSON.stringify(usuarioAtualizado, null, 2));
+
+    // Enviar atualização para o endpoint correto
+    const respostaAtualizacao = await fetch(`${URL_ATUALIZAR_USUARIO}/${idUsuarioSelecionado}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(usuarioAtualizado)
+    });
+    if (!respostaAtualizacao.ok) {
+      const textoErro = await respostaAtualizacao.text(); // Usar text() para respostas não-JSON
+      console.error('Erro na resposta do backend:', textoErro);
+      throw new Error(`Erro ao atualizar: ${respostaAtualizacao.status} - ${textoErro}`);
+    }
+
+    const data = await respostaAtualizacao.text(); // Usar text() primeiro para depuração
+    console.log('Resposta da atualização (raw):', data);
+    const jsonData = data ? JSON.parse(data) : {};
+    console.log('Resposta da atualização (parsed):', jsonData);
+    await buscarPermissoes(definirPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID);
+  } catch (erro) {
+    console.error('Erro ao alterar permissão:', erro);
+    alert('Falha ao alterar permissão. Tente novamente.');
   }
 };
 
