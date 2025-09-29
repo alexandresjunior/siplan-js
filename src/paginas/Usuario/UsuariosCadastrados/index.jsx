@@ -55,6 +55,8 @@ function Usuario() {
   const [indicadorSelecionado, setIndicadorSelecionado] = useState(''); // ID do indicador selecionado
   const [permissoes, setPermissoes] = useState({});
   const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false);
+  const [opcoesGerencia, setOpcoesGerencia] = useState([]); // Lista de gerências
+  const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]); // Lista de IDs de indicadores selecionados
 
   // Estados para o modal de edição de permissões
   const [usuarioEditando, setUsuarioEditando] = useState(null);
@@ -79,33 +81,120 @@ function Usuario() {
         if (!diretoriaResp.ok) throw new Error(`Erro ao carregar diretorias: ${diretoriaResp.status} - ${diretoriaText}`);
 
         const diretoriaData = JSON.parse(diretoriaText);
-        console.log('Diretorias retornadas (parsed):', diretoriaData);
-
         const diretoriasFiltradas = Array.isArray(diretoriaData) ? diretoriaData.map(d => ({ id: d.id, nome: d.nome || d.descricao || 'Sem nome' })) : [];
         setOpcoesDiretoria(diretoriasFiltradas.length > 0 ? diretoriasFiltradas : [{ id: '', nome: 'Nenhuma diretoria disponível' }]);
+        // Limpa gerências e indicadores ao mudar o ano
+        setDiretoria('');
+        setOpcoesGerencia([]);
+        setOpcoesIndicadores([]);
+        setIndicadoresSelecionados([]);
       } catch (erro) {
         console.error('Erro ao carregar diretorias:', erro.message);
         setOpcoesDiretoria([{ id: '', nome: 'Erro ao carregar diretorias' }]);
       }
     };
 
-    carregarOpcoesDiretoria();
+    if (anoOrganograma) {
+      carregarOpcoesDiretoria();
+    }
   }, [paginaAtual, tamanhoPagina, anoOrganograma]);
 
   useEffect(() => {
-    const carregarIndicadores = async () => {
-      console.log("Estado do modal:", exibirModalIndicadores, "ID selecionado:", idUsuarioSelecionado);
+    const carregarIndicadoresLiberados = async () => {
+      console.log('Carregando indicadores liberados - Modal:', exibirModalIndicadores, 'ID:', idUsuarioSelecionado);
       if (exibirModalIndicadores && idUsuarioSelecionado) {
-        posicaoRolagem.current = window.scrollY;
-        console.log("Buscando indicadores para ID:", idUsuarioSelecionado);
-        await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
-        console.log("Indicadores após busca:", indicadores);
-      } else if (!exibirModalIndicadores) {
-        window.scrollTo(0, posicaoRolagem.current);
+        try {
+          await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
+          console.log('Indicadores carregados:', indicadores);
+        } catch (erro) {
+          console.error('Erro ao carregar indicadores liberados:', erro);
+        }
       }
     };
-    carregarIndicadores();
+    carregarIndicadoresLiberados();
   }, [exibirModalIndicadores, idUsuarioSelecionado]);
+
+  useEffect(() => {
+    if (diretoria) {
+      carregarOpcoesIndicadores();
+    } else {
+      setOpcoesIndicadores([{ id: '', nome: 'Selecione uma diretoria primeiro' }]);
+    }
+  }, [diretoria]);
+
+  useEffect(() => {
+    if (gerencia) {
+      carregarOpcoesIndicadores();
+    }
+  }, [gerencia]);
+
+  const carregarOpcoesGerencia = async () => {
+    if (!diretoria) {
+      setOpcoesGerencia([{ id: '', nome: 'Selecione uma diretoria primeiro' }]);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const url = `http://localhost:8098/elementoOrganizacional/nome/ano//${anoOrganograma}/${diretoria}`;
+      const resposta = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const texto = await resposta.text();
+      console.log('Resposta bruta de gerências:', texto);
+
+      if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
+
+      const data = JSON.parse(texto);
+      const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
+      setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
+      // Limpa gerência selecionada, indicadores e seleções ao mudar a diretoria
+      setGerencia('');
+      setOpcoesIndicadores([]);
+      setIndicadoresSelecionados([]);
+    } catch (erro) {
+      console.error('Erro ao carregar gerências:', erro.message);
+      setOpcoesGerencia([{ id: '', nome: 'Erro ao carregar gerências' }]);
+    }
+  };
+
+  const carregarOpcoesIndicadores = async () => {
+    if (!anoOrganograma || !diretoria) {
+      setOpcoesIndicadores([{ id: '', nome: 'Selecione ano e diretoria primeiro' }]);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const diretoriaId = parseInt(diretoria); // Converte para número, já que o endpoint espera Long
+      if (isNaN(diretoriaId)) {
+        throw new Error('ID da diretoria não é um número válido');
+      }
+      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`; // Ajustado para usar diretoria
+      console.log('Chamando URL para indicadores:', url);
+      const resposta = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const texto = await resposta.text();
+      console.log('Resposta bruta de indicadores:', texto);
+
+      if (!resposta.ok) throw new Error(`Erro ao carregar indicadores: ${resposta.status} - ${texto}`);
+
+      const data = JSON.parse(texto);
+      console.log('Dados parseados de indicadores:', data);
+      // Mapeando a lista de Indicador para o formato esperado
+      const indicadores = Array.isArray(data) ? data.map(i => ({
+        id: i.id,
+        nome: i.nomeIndicador || i.nome || i.descricao || 'Sem nome' // Tenta múltiplos campos
+      })) : [];
+      setOpcoesIndicadores(indicadores.length > 0 ? indicadores : [{ id: '', nome: 'Nenhum indicador disponível' }]);
+      setIndicadoresSelecionados([]); // Limpa seleções ao recarregar
+    } catch (erro) {
+      console.error('Erro ao carregar indicadores:', erro.message);
+      setOpcoesIndicadores([{ id: '', nome: `Erro ao carregar indicadores: ${erro.message}` }]);
+    }
+  };
+
 
   const abrirModalIndicadores = (idUsuario) => {
     definirIdUsuarioSelecionado(idUsuario);
@@ -117,6 +206,9 @@ function Usuario() {
     setDiretoria('');
     setGerencia('');
     setMensagemErro('');
+    setOpcoesGerencia([]);
+    setOpcoesIndicadores([]);
+    setIndicadoresSelecionados([]);
     definirExibirModalAdicionar(true);
   };
 
@@ -139,27 +231,36 @@ function Usuario() {
   };
 
   const handleAdicionarIndicador = async () => {
-    if (!anoOrganograma || !diretoria || !gerencia || !indicadorSelecionado) {
-      setMensagemErro('Todos os campos obrigatórios devem ser preenchidos.');
+    if (!anoOrganograma || !diretoria || !gerencia || indicadoresSelecionados.length === 0) {
+      setMensagemErro('Todos os campos obrigatórios devem ser preenchidos e pelo menos um indicador deve ser selecionado.');
       return;
     }
 
-    const payload = {
-      anoOrganograma: parseInt(anoOrganograma),
-      diretoriaId: parseInt(diretoria),
-      gerencia: gerencia,
-      usuarioId: idUsuarioSelecionado,
-      indicadorId: parseInt(indicadorSelecionado)
-    };
-
-    console.log('Payload enviado:', payload);
-    await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
-    fecharModalAdicionar();
-    setAnoOrganograma('');
-    setDiretoria('');
-    setGerencia('');
-    setIndicadorSelecionado('');
-    setMensagemErro('');
+    try {
+      const token = localStorage.getItem('token');
+      for (const indicadorId of indicadoresSelecionados) {
+        const payload = {
+          anoOrganograma: parseInt(anoOrganograma),
+          diretoriaId: parseInt(diretoria),
+          gerencia: gerencia,
+          usuarioId: idUsuarioSelecionado,
+          indicadorId: parseInt(indicadorId)
+        };
+        console.log('Payload enviado:', payload);
+        await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
+      }
+      fecharModalAdicionar();
+      setAnoOrganograma('');
+      setDiretoria('');
+      setGerencia('');
+      setOpcoesGerencia([]);
+      setOpcoesIndicadores([]);
+      setIndicadoresSelecionados([]);
+      setMensagemErro('');
+    } catch (erro) {
+      console.error('Erro ao adicionar indicadores:', erro);
+      setMensagemErro('Falha ao adicionar indicadores. Tente novamente.');
+    }
   };
 
   const manipularExcluirIndicador = (idIndicador) => {
@@ -243,25 +344,43 @@ function Usuario() {
         </div>
         <div className="mb-3">
           <label className="form-label">Diretoria:</label>
-          <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value)} required>
+          <select className="form-select" value={diretoria} onChange={(e) => { setDiretoria(e.target.value); carregarOpcoesGerencia(); }} required>
             <option value="" disabled>Diretoria*</option>
             {opcoesDiretoria.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
             ))}
           </select>
         </div>
-        <div className="mb-3">
+        <div className="mb-3" style={{ display: diretoria ? 'block' : 'none' }}>
           <label className="form-label">Gerência:</label>
-          <input type="text" className="form-control" value={gerencia} onChange={(e) => setGerencia(e.target.value)} placeholder="Gerência*" required />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Indicador:</label>
-          <select className="form-select" value={indicadorSelecionado} onChange={(e) => setIndicadorSelecionado(e.target.value)} required>
-            <option value="" disabled>Selecione um indicador*</option>
-            {opcoesIndicadores.map((opcao) => (
+          <select className="form-select" value={gerencia} onChange={(e) => { setGerencia(e.target.value); carregarOpcoesIndicadores(); }} required disabled={!diretoria}>
+            <option value="" disabled>Gerência*</option>
+            {opcoesGerencia.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
             ))}
           </select>
+        </div>
+        <div className="mb-3" style={{ display: diretoria ? 'block' : 'none' }}>
+          <label className="form-label">Indicadores:</label>
+          {opcoesIndicadores.map((indicador) => (
+            <div key={indicador.id} className="form-check">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id={`indicador-${indicador.id}`}
+                value={indicador.id}
+                checked={indicadoresSelecionados.includes(indicador.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setIndicadoresSelecionados([...indicadoresSelecionados, indicador.id]);
+                  } else {
+                    setIndicadoresSelecionados(indicadoresSelecionados.filter(id => id !== indicador.id));
+                  }
+                }}
+              />
+              <label className="form-check-label" htmlFor={`indicador-${indicador.id}`}>{indicador.nome}</label>
+            </div>
+          ))}
         </div>
       </div>
     );
