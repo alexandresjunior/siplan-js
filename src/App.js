@@ -7,6 +7,7 @@ import Usuario from './paginas/Usuario/UsuariosCadastrados';
 import ProtectedRoute from './componentes/ProtecaoDeRota/index';
 import NovoUsuario from "./paginas/Usuario/NovoUsuario";
 import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
+import Objetivos from "./paginas/Cadastros/Objetivos";
 
 function App() {
   return (
@@ -76,7 +77,7 @@ function App() {
           path="/cadastros/objetivos"
           element={
             <ProtectedRoute>
-              <></>
+              <Objetivos />
             </ProtectedRoute>
           }
         />
