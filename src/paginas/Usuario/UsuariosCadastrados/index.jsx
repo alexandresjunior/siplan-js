@@ -1,6 +1,7 @@
 import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import React, { useState, useEffect, useRef } from 'react';
+import axios from "axios";
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
 import { AiOutlineDelete } from 'react-icons/ai';
@@ -55,14 +56,11 @@ function Usuario() {
       }
 
       try {
-        const diretoriaResp = await fetch(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
+        const { data: diretoriaText } = await axios.get(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
-        const diretoriaText = await diretoriaResp.text();
 
-        if (!diretoriaResp.ok) throw new Error(`Erro ao carregar diretorias: ${diretoriaResp.status} - ${diretoriaText}`);
-
-        const diretoriaData = JSON.parse(diretoriaText);
+        const diretoriaData = diretoriaText;
         const diretoriasFiltradas = Array.isArray(diretoriaData) ? diretoriaData.map(d => ({ id: d.id, nome: d.nome || d.descricao || 'Sem nome' })) : [];
         setOpcoesDiretoria(diretoriasFiltradas.length > 0 ? diretoriasFiltradas : [{ id: '', nome: 'Nenhuma diretoria disponível' }]);
         setDiretoria('');
@@ -121,14 +119,11 @@ function Usuario() {
       const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
       const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
 
-      const resposta = await fetch(url, {
+      const { data: texto } = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
-      const texto = await resposta.text();
 
-      if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
-
-      const data = JSON.parse(texto);
+      const data = texto;
       const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
       setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
       setGerencia('');
@@ -148,26 +143,23 @@ function Usuario() {
 
     try {
       const token = localStorage.getItem('token');
-      const diretoriaId = parseInt(diretoria); 
+      const diretoriaId = parseInt(diretoria);
       if (isNaN(diretoriaId)) {
         throw new Error('ID da diretoria não é um número válido');
       }
-      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`; 
-      const resposta = await fetch(url, {
+      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`;
+      const { data: texto } = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
-      const texto = await resposta.text();
 
-      if (!resposta.ok) throw new Error(`Erro ao carregar indicadores: ${resposta.status} - ${texto}`);
-
-      const data = JSON.parse(texto);
+      const data = texto;
       const indicadores = Array.isArray(data) ? data.map(i => ({
         id: i.id,
         nome: i.nomeIndicador || i.nome || i.descricao || 'Sem nome',
         tipo: i.tipoIndicador?.nome
       })) : [];
       setOpcoesIndicadores(indicadores.length > 0 ? indicadores : [{ id: '', nome: 'Nenhum indicador disponível' }]);
-      setIndicadoresSelecionados([]); 
+      setIndicadoresSelecionados([]);
     } catch (erro) {
       console.error('Erro ao carregar indicadores:', erro.message);
       setOpcoesIndicadores([{ id: '', nome: `Erro ao carregar indicadores: ${erro.message}` }]);
@@ -250,7 +242,7 @@ function Usuario() {
   const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && permissoes) {
       await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes);
-      setExibirModalPermissoes(false); 
+      setExibirModalPermissoes(false);
     }
   };
 
