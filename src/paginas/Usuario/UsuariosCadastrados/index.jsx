@@ -330,25 +330,44 @@ function Usuario() {
         </div>
         <div className="mb-3" style={{ display: diretoria ? 'block' : 'none' }}>
           <label className="form-label">Indicadores:</label>
-          {opcoesIndicadores.map((indicador) => (
-            <div key={indicador.id} className="form-check">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id={`indicador-${indicador.id}`}
-                value={indicador.id}
-                checked={indicadoresSelecionados.includes(indicador.id)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setIndicadoresSelecionados([...indicadoresSelecionados, indicador.id]);
-                  } else {
-                    setIndicadoresSelecionados(indicadoresSelecionados.filter(id => id !== indicador.id));
-                  }
-                }}
-              />
-              <label className="form-check-label" htmlFor={`indicador-${indicador.id}`}>{indicador.nome} - {indicador.tipo}</label>
-            </div>
-          ))}
+          <table className="table table-striped">
+            <thead>
+              <tr className="table-light">
+                <th className="p-3"></th>
+                <th className="p-3">Nome</th>
+                <th className="p-3">Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {opcoesIndicadores.map((indicador) => (
+                <tr key={indicador.id} className="border-bottom">
+                  <td className="py-2 px-3">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`indicador-${indicador.id}`}
+                      value={indicador.id}
+                      checked={indicadoresSelecionados.includes(indicador.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setIndicadoresSelecionados([...indicadoresSelecionados, indicador.id]);
+                        } else {
+                          setIndicadoresSelecionados(indicadoresSelecionados.filter(id => id !== indicador.id));
+                        }
+                      }}
+                    />
+                  </td>
+                  <td className="py-2 px-3">{indicador.nome || 'Sem nome'}</td>
+                  <td className="py-2 px-3">{indicador.tipo || 'Sem tipo'}</td>
+                </tr>
+              ))}
+              {opcoesIndicadores.length === 0 && (
+                <tr>
+                  <td colSpan="3" className="text-center py-3">Nenhum indicador disponível.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     );
