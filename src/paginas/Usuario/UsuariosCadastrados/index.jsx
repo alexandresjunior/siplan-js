@@ -117,6 +117,7 @@ function Usuario() {
   useEffect(() => {
     if (diretoria) {
       carregarOpcoesIndicadores();
+      carregarOpcoesGerencia();
     } else {
       setOpcoesIndicadores([{ id: '', nome: 'Selecione uma diretoria primeiro' }]);
     }
@@ -129,34 +130,38 @@ function Usuario() {
   }, [gerencia]);
 
   const carregarOpcoesGerencia = async () => {
-    if (!diretoria) {
-      setOpcoesGerencia([{ id: '', nome: 'Selecione uma diretoria primeiro' }]);
-      return;
-    }
+  if (!diretoria || !anoOrganograma) {
+    setOpcoesGerencia([{ id: '', nome: 'Selecione ano e diretoria primeiro' }]);
+    return;
+  }
 
-    try {
-      const token = localStorage.getItem('token');
-      const url = `http://localhost:8098/elementoOrganizacional/nome/ano//${anoOrganograma}/${diretoria}`;
-      const resposta = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
-      const texto = await resposta.text();
-      console.log('Resposta bruta de gerências:', texto);
+  try {
+    const token = localStorage.getItem('token');
+    const diretoriaSelecionada = opcoesDiretoria.find(d => d.id === diretoria);
+    const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
+    const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
+    console.log('Chamando URL para gerências:', url);
 
-      if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
+    const resposta = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const texto = await resposta.text();
+    console.log('Resposta bruta de gerências:', texto);
 
-      const data = JSON.parse(texto);
-      const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
-      setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
-      // Limpa gerência selecionada, indicadores e seleções ao mudar a diretoria
-      setGerencia('');
-      setOpcoesIndicadores([]);
-      setIndicadoresSelecionados([]);
-    } catch (erro) {
-      console.error('Erro ao carregar gerências:', erro.message);
-      setOpcoesGerencia([{ id: '', nome: 'Erro ao carregar gerências' }]);
-    }
-  };
+    if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
+
+    const data = JSON.parse(texto);
+    const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
+    setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
+    // Limpa gerência selecionada, indicadores e seleções ao mudar a diretoria
+    setGerencia('');
+    setOpcoesIndicadores([]);
+    setIndicadoresSelecionados([]);
+  } catch (erro) {
+    console.error('Erro ao carregar gerências:', erro.message);
+    setOpcoesGerencia([{ id: '', nome: 'Erro ao carregar gerências' }]);
+  }
+};
 
   const carregarOpcoesIndicadores = async () => {
     if (!anoOrganograma || !diretoria) {
@@ -344,7 +349,7 @@ function Usuario() {
         </div>
         <div className="mb-3">
           <label className="form-label">Diretoria:</label>
-          <select className="form-select" value={diretoria} onChange={(e) => { setDiretoria(e.target.value); carregarOpcoesGerencia(); }} required>
+          <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value) } required>
             <option value="" disabled>Diretoria*</option>
             {opcoesDiretoria.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
