@@ -13,13 +13,10 @@ import {
   manipularAlterarPermissao
 } from "../../../service/usuariosCadastradosService";
 
-// URL base da API
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip/excluir';
-const URL_RISCO = 'http://localhost:8098/risco/list-by-ano';
-const URL_OBJETIVO = 'http://localhost:8098/objetivo/list-by-ano';
 
 function Usuario() {
   const [usuarios, definirUsuarios] = useState([]);
@@ -34,31 +31,17 @@ function Usuario() {
   const [idUsuarioSelecionado, definirIdUsuarioSelecionado] = useState(null);
   const [indicadores, definirIndicadores] = useState([]);
   const posicaoRolagem = useRef(0);
-
-  // Estados para o formulário de adicionar indicador
-  const [tipoIndicador, setTipoIndicador] = useState('');
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [sentido, setSentido] = useState('');
-  const [unidadeMedida, setUnidadeMedida] = useState('');
-  const [riscoId, setRiscoId] = useState('');
-  const [objetivoId, setObjetivoId] = useState('');
-  const [unidadeResponsavel, setUnidadeResponsavel] = useState('');
-  const [diretoriaGerencia, setDiretoriaGerencia] = useState('');
-  const [mensagemErro, setMensagemErro] = useState(''); // Adicionado
+  const [mensagemErro, setMensagemErro] = useState('');
   const [anoOrganograma, setAnoOrganograma] = useState('');
   const [diretoria, setDiretoria] = useState('');
   const [gerencia, setGerencia] = useState('');
-  const anoAtual = new Date().getFullYear(); // Ano atual dinâmico
-  const [opcoesDiretoria, setOpcoesDiretoria] = useState([]); // Diretorias carregadas
-  const [opcoesIndicadores, setOpcoesIndicadores] = useState([]); // Indicadores disponíveis
-  const [indicadorSelecionado, setIndicadorSelecionado] = useState(''); // ID do indicador selecionado
+  const anoAtual = new Date().getFullYear();
+  const [opcoesDiretoria, setOpcoesDiretoria] = useState([]);
+  const [opcoesIndicadores, setOpcoesIndicadores] = useState([]);
   const [permissoes, setPermissoes] = useState({});
   const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false);
-  const [opcoesGerencia, setOpcoesGerencia] = useState([]); // Lista de gerências
-  const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]); // Lista de IDs de indicadores selecionados
-
-  // Estados para o modal de edição de permissões
+  const [opcoesGerencia, setOpcoesGerencia] = useState([]);
+  const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
 
   useEffect(() => {
@@ -76,14 +59,12 @@ function Usuario() {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
         const diretoriaText = await diretoriaResp.text();
-        console.log('Resposta bruta de diretorias:', diretoriaText);
 
         if (!diretoriaResp.ok) throw new Error(`Erro ao carregar diretorias: ${diretoriaResp.status} - ${diretoriaText}`);
 
         const diretoriaData = JSON.parse(diretoriaText);
         const diretoriasFiltradas = Array.isArray(diretoriaData) ? diretoriaData.map(d => ({ id: d.id, nome: d.nome || d.descricao || 'Sem nome' })) : [];
         setOpcoesDiretoria(diretoriasFiltradas.length > 0 ? diretoriasFiltradas : [{ id: '', nome: 'Nenhuma diretoria disponível' }]);
-        // Limpa gerências e indicadores ao mudar o ano
         setDiretoria('');
         setOpcoesGerencia([]);
         setOpcoesIndicadores([]);
@@ -101,11 +82,9 @@ function Usuario() {
 
   useEffect(() => {
     const carregarIndicadoresLiberados = async () => {
-      console.log('Carregando indicadores liberados - Modal:', exibirModalIndicadores, 'ID:', idUsuarioSelecionado);
       if (exibirModalIndicadores && idUsuarioSelecionado) {
         try {
           await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
-          console.log('Indicadores carregados:', indicadores);
         } catch (erro) {
           console.error('Erro ao carregar indicadores liberados:', erro);
         }
@@ -126,42 +105,40 @@ function Usuario() {
   useEffect(() => {
     if (gerencia) {
       carregarOpcoesIndicadores();
+      renderizarIndicadores();
     }
   }, [gerencia]);
 
   const carregarOpcoesGerencia = async () => {
-  if (!diretoria || !anoOrganograma) {
-    setOpcoesGerencia([{ id: '', nome: 'Selecione ano e diretoria primeiro' }]);
-    return;
-  }
+    if (!diretoria || !anoOrganograma) {
+      setOpcoesGerencia([{ id: '', nome: 'Selecione ano e diretoria primeiro' }]);
+      return;
+    }
 
-  try {
-    const token = localStorage.getItem('token');
-    const diretoriaSelecionada = opcoesDiretoria.find(d => d.id === diretoria);
-    const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
-    const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
-    console.log('Chamando URL para gerências:', url);
+    try {
+      const token = localStorage.getItem('token');
+      const diretoriaSelecionada = opcoesDiretoria.find(d => d.id === diretoria);
+      const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
+      const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
 
-    const resposta = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    const texto = await resposta.text();
-    console.log('Resposta bruta de gerências:', texto);
+      const resposta = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const texto = await resposta.text();
 
-    if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
+      if (!resposta.ok) throw new Error(`Erro ao carregar gerências: ${resposta.status} - ${texto}`);
 
-    const data = JSON.parse(texto);
-    const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
-    setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
-    // Limpa gerência selecionada, indicadores e seleções ao mudar a diretoria
-    setGerencia('');
-    setOpcoesIndicadores([]);
-    setIndicadoresSelecionados([]);
-  } catch (erro) {
-    console.error('Erro ao carregar gerências:', erro.message);
-    setOpcoesGerencia([{ id: '', nome: 'Erro ao carregar gerências' }]);
-  }
-};
+      const data = JSON.parse(texto);
+      const gerencias = Array.isArray(data) ? data.map(g => ({ id: g.id, nome: g.nome || g.descricao || 'Sem nome' })) : [];
+      setOpcoesGerencia(gerencias.length > 0 ? gerencias : [{ id: '', nome: 'Nenhuma gerência disponível' }]);
+      setGerencia('');
+      setOpcoesIndicadores([]);
+      setIndicadoresSelecionados([]);
+    } catch (erro) {
+      console.error('Erro ao carregar gerências:', erro.message);
+      setOpcoesGerencia([{ id: '', nome: 'Erro ao carregar gerências' }]);
+    }
+  };
 
   const carregarOpcoesIndicadores = async () => {
     if (!anoOrganograma || !diretoria) {
@@ -171,29 +148,26 @@ function Usuario() {
 
     try {
       const token = localStorage.getItem('token');
-      const diretoriaId = parseInt(diretoria); // Converte para número, já que o endpoint espera Long
+      const diretoriaId = parseInt(diretoria); 
       if (isNaN(diretoriaId)) {
         throw new Error('ID da diretoria não é um número válido');
       }
-      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`; // Ajustado para usar diretoria
-      console.log('Chamando URL para indicadores:', url);
+      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`; 
       const resposta = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
       const texto = await resposta.text();
-      console.log('Resposta bruta de indicadores:', texto);
 
       if (!resposta.ok) throw new Error(`Erro ao carregar indicadores: ${resposta.status} - ${texto}`);
 
       const data = JSON.parse(texto);
-      console.log('Dados parseados de indicadores:', data);
-      // Mapeando a lista de Indicador para o formato esperado
       const indicadores = Array.isArray(data) ? data.map(i => ({
         id: i.id,
-        nome: i.nomeIndicador || i.nome || i.descricao || 'Sem nome' // Tenta múltiplos campos
+        nome: i.nomeIndicador || i.nome || i.descricao || 'Sem nome',
+        tipo: i.tipoIndicador?.nome
       })) : [];
       setOpcoesIndicadores(indicadores.length > 0 ? indicadores : [{ id: '', nome: 'Nenhum indicador disponível' }]);
-      setIndicadoresSelecionados([]); // Limpa seleções ao recarregar
+      setIndicadoresSelecionados([]); 
     } catch (erro) {
       console.error('Erro ao carregar indicadores:', erro.message);
       setOpcoesIndicadores([{ id: '', nome: `Erro ao carregar indicadores: ${erro.message}` }]);
@@ -251,7 +225,6 @@ function Usuario() {
           usuarioId: idUsuarioSelecionado,
           indicadorId: parseInt(indicadorId)
         };
-        console.log('Payload enviado:', payload);
         await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
       fecharModalAdicionar();
@@ -277,7 +250,7 @@ function Usuario() {
   const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && permissoes) {
       await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes);
-      setExibirModalPermissoes(false); // Fecha o modal após salvar
+      setExibirModalPermissoes(false); 
     }
   };
 
@@ -288,7 +261,6 @@ function Usuario() {
   };
 
   const renderizarIndicadores = () => {
-    console.log("Renderizando indicadores:", indicadores);
     if (!indicadores || indicadores.length === 0) {
       return <tr><td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td></tr>;
     }
@@ -323,7 +295,6 @@ function Usuario() {
       label: 'Salvar',
       className: 'btn btn-primary',
       onClick: () => {
-        console.log('Botão Salvar clicado - iniciando handleSalvarPermissoes');
         handleSalvarPermissoes();
       }
     },
@@ -349,7 +320,7 @@ function Usuario() {
         </div>
         <div className="mb-3">
           <label className="form-label">Diretoria:</label>
-          <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value) } required>
+          <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value)} required>
             <option value="" disabled>Diretoria*</option>
             {opcoesDiretoria.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
@@ -358,7 +329,7 @@ function Usuario() {
         </div>
         <div className="mb-3" style={{ display: diretoria ? 'block' : 'none' }}>
           <label className="form-label">Gerência:</label>
-          <select className="form-select" value={gerencia} onChange={(e) => { setGerencia(e.target.value); carregarOpcoesIndicadores(); }} required disabled={!diretoria}>
+          <select className="form-select" value={gerencia} onChange={(e) => setGerencia(e.target.value)} required disabled={!diretoria}>
             <option value="" disabled>Gerência*</option>
             {opcoesGerencia.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
@@ -383,7 +354,7 @@ function Usuario() {
                   }
                 }}
               />
-              <label className="form-check-label" htmlFor={`indicador-${indicador.id}`}>{indicador.nome}</label>
+              <label className="form-check-label" htmlFor={`indicador-${indicador.id}`}>{indicador.nome} - {indicador.tipo}</label>
             </div>
           ))}
         </div>

@@ -18,7 +18,6 @@ export const buscarUsuarios = async (definirCarregando, definirUsuarios, definir
       throw new Error(`Erro HTTP: ${resposta.status} - ${textoErro}`);
     }
     const dados = await resposta.json();
-    console.log('Resposta da API:', dados);
     const usuariosMapeados = dados.content.map(usuario => ({
       id: usuario.id,
       nome: usuario.nome,
@@ -60,7 +59,6 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
       throw new Error(`Erro HTTP: ${resposta.status} - ${textoErro}`);
     }
     const dadosUsuario = await resposta.json();
-    console.log('Resposta bruta da API:', dadosUsuario);
     let indicadoresLiberados = dadosUsuario.indicadoresLiberados || [];
     const indicadoresMapeados = indicadoresLiberados.map(ind => ({
       id: ind.id,
@@ -69,7 +67,6 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
       indicadorExcluido: ind.indicadorExcluido || false
     }));
     const indicadoresNaoExcluidos = indicadoresMapeados.filter(ind => !ind.indicadorExcluido);
-    console.log('Indicadores mapeados e filtrados:', indicadoresNaoExcluidos);
     definirIndicadores(indicadoresNaoExcluidos);
   } catch (erro) {
     console.error('Erro ao carregar indicadores:', erro);
@@ -83,31 +80,25 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
   try {
     const token = localStorage.getItem('token');
 
-    // Buscar dados do usuário para atualizar
     const respostaUsuario = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     if (!respostaUsuario.ok) throw new Error('Erro ao buscar usuário');
     const dadosUsuario = await respostaUsuario.json();
-    console.log('Dados do usuário antes da atualização:', dadosUsuario);
 
-    // Adicionar o indicador ao conjunto de indicadores liberados
     const indicadoresAtualizados = [...(dadosUsuario.indicadoresLiberados || []), {
       id: novoIndicador.indicadorId,
       indicadorExcluido: false
     }];
 
-    // Criar usuarioAtualizado, convertendo lotacaoAtual para string (usando o id)
     const usuarioAtualizado = {
       ...dadosUsuario,
       indicadoresLiberados: indicadoresAtualizados,
-      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null // Converte para string do ID
+      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null 
     };
-    const payload = [usuarioAtualizado]; // Array explícita
-    console.log('Payload bruto antes do stringify:', payload);
-    console.log('Payload enviado para atualização:', JSON.stringify(payload, null, 2));
+    const payload = [usuarioAtualizado]; 
+    
 
-    // Enviar atualização com método POST
     const respostaAtualizacao = await fetch(URL_ATUALIZAR_USUARIO, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -119,7 +110,6 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
       throw new Error(`Erro ao atualizar usuário: ${respostaAtualizacao.status} - ${textoErro}`);
     }
 
-    console.log('Resposta da atualização:', await respostaAtualizacao.json());
     await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
   } catch (erro) {
     console.error('Erro ao adicionar indicador:', erro);
@@ -144,7 +134,7 @@ export const manipularExcluirIndicador = async (definirIndicadores, idUsuarioSel
       body: JSON.stringify(usuarioAtualizado)
     });
     if (!respostaAtualizacao.ok) throw new Error('Erro ao atualizar usuário');
-    buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID); // Recarrega os indicadores
+    buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID); 
   } catch (erro) {
     console.error('Erro ao excluir indicador:', erro);
     alert('Falha ao excluir indicador. Tente novamente.');
@@ -169,9 +159,7 @@ export const buscarPermissoes = async (definirPermissoes, idUsuarioSelecionado, 
     }
 
     const dadosUsuario = await resposta.json();
-    console.log('Dados do usuário com permissões:', dadosUsuario);
 
-    // Extrair permissões relevantes
     const permissoes = {
       administrador: dadosUsuario.administrador || false,
       administradorRisco: dadosUsuario.administradorRisco || false,
@@ -193,42 +181,37 @@ export const manipularAlterarPermissao = async (definirPermissoes, idUsuarioSele
       return;
     }
 
-    // Buscar dados do usuário para atualizar
     const respostaUsuario = await fetch(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     if (!respostaUsuario.ok) throw new Error('Erro ao buscar usuário');
     const dadosUsuario = await respostaUsuario.json();
-    console.log('Dados do usuário antes da atualização:', dadosUsuario);
 
-    // Preparar o payload com as permissões atualizadas
     const usuarioAtualizado = {
-      ...dadosUsuario,
+      id: dadosUsuario.id,
+      nome: dadosUsuario.nome,
+      login: dadosUsuario.login,
+      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null,
       administrador: permissoes.administrador,
       administradorRisco: permissoes.administradorRisco,
       pareto: permissoes.pareto,
       atualizarLotAutomatica: permissoes.atualizarLotAutomatica,
-      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null
     };
-    console.log('Payload bruto antes do stringify:', usuarioAtualizado);
-    console.log('Payload enviado para atualização:', JSON.stringify(usuarioAtualizado, null, 2));
-
-    // Enviar atualização para o endpoint correto
+    
+    
     const respostaAtualizacao = await fetch(`${URL_ATUALIZAR_USUARIO}/${idUsuarioSelecionado}`, {
-      method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      method: 'PUT',
       body: JSON.stringify(usuarioAtualizado)
     });
     if (!respostaAtualizacao.ok) {
-      const textoErro = await respostaAtualizacao.text(); // Usar text() para respostas não-JSON
+      const textoErro = await respostaAtualizacao.text(); 
       console.error('Erro na resposta do backend:', textoErro);
       throw new Error(`Erro ao atualizar: ${respostaAtualizacao.status} - ${textoErro}`);
     }
 
-    const data = await respostaAtualizacao.text(); // Usar text() primeiro para depuração
-    console.log('Resposta da atualização (raw):', data);
+    const data = await respostaAtualizacao.text(); 
     const jsonData = data ? JSON.parse(data) : {};
-    console.log('Resposta da atualização (parsed):', jsonData);
     await buscarPermissoes(definirPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID);
   } catch (erro) {
     console.error('Erro ao alterar permissão:', erro);
@@ -253,9 +236,7 @@ export const manipularExcluir = async (definirUsuarios, definirPaginaAtual, defi
       definirUsuarios(usuarios.filter(usuario => usuario.id !== idUsuario));
       if (paginaAtual > 0 && usuarios.length % tamanhoPagina === 1) {
         definirPaginaAtual(paginaAtual - 1);
-      }
-      console.log(`Usuário com ID ${idUsuario} excluído com sucesso`);
-    } catch (erro) {
+      }    } catch (erro) {
       console.error('Erro ao excluir usuário:', erro);
       alert('Falha ao excluir o usuário. Tente novamente.');
     }
