@@ -44,6 +44,8 @@ function Usuario() {
   const [opcoesGerencia, setOpcoesGerencia] = useState([]);
   const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [exibirModalElementos, definirExibirModalElementos] = useState(false);
+  const [elementosOrganizacionais, definirElementosOrganizacionais] = useState([]);
 
   useEffect(() => {
     buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
@@ -252,6 +254,33 @@ function Usuario() {
     }
   };
 
+  const abrirModalElementos = (idUsuario) => {
+    definirIdUsuarioSelecionado(idUsuario);
+    definirExibirModalElementos(true);
+    // INSIRA AQUI O ENDPOINT PARA BUSCAR OS ELEMENTOS ORGANIZACIONAIS
+    // Exemplo: carregarElementosOrganizacionais(idUsuario);
+  };
+
+  const fecharModalElementos = () => {
+    definirExibirModalElementos(false);
+  };
+
+  const abrirModalAdicionarElemento = () => {
+  };
+
+  const renderizarElementosOrganizacionais = () => {
+    if (!elementosOrganizacionais || elementosOrganizacionais.length === 0) {
+      return <tr><td colSpan="3" className="text-center py-3">Não há Elementos Organizacionais liberados para este usuário.</td></tr>;
+    }
+    return elementosOrganizacionais.map((elemento, index) => (
+      <tr key={index} className="border-bottom">
+        <td className="py-2 px-3">{elemento.unidade || 'Sem unidade'}</td>
+        <td className="py-2 px-3">{elemento.nome || 'Sem nome'}</td>
+        <td className="py-2 px-3">{elemento.anoOrganograma || 'Sem ano'}</td>
+      </tr>
+    ));
+  };
+
   const renderizarIndicadores = () => {
     if (!indicadores || indicadores.length === 0) {
       return <tr><td colSpan="3" className="text-center py-3">Nenhum indicador liberado.</td></tr>;
@@ -415,7 +444,7 @@ function Usuario() {
             </button>
             <ul className="dropdown-menu" aria-labelledby={`menuDropdown_${usuario.id}`}>
               <li><a className="dropdown-item" href="#" onClick={() => abrirModalIndicadores(usuario.id)}>Indicadores Liberados</a></li>
-              <li><a className="dropdown-item" href="#">Elementos Organizacionais Liberados</a></li>
+              <li><a className="dropdown-item" href="#" onClick={() => abrirModalElementos(usuario.id)}>Elementos Organizacionais Liberados</a></li>
               <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(usuario.id)}>Editar Permissões</a></li>
               <li>
                 <button
@@ -551,6 +580,29 @@ function Usuario() {
               </div>
             </div>
           )}
+        </Modal>
+        <Modal
+          estaAberto={exibirModalElementos}
+          aoFechar={fecharModalElementos}
+          titulo={`Elementos Organizacionais Liberados`}
+          botoesAcao={[
+            { label: 'Adicionar Elemento Organizacional', className: 'btn btn-primary', onClick: abrirModalAdicionarElemento },
+            { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalElementos }
+          ]}
+
+        >
+          <div className="card-body">
+            <table className="table table-striped">
+              <thead>
+                <tr className="table-light">
+                  <th className="p-3">Unidade</th>
+                  <th className="p-3">Nome</th>
+                  <th className="p-3">Ano Organograma</th>
+                </tr>
+              </thead>
+              <tbody>{renderizarElementosOrganizacionais()}</tbody>
+            </table>
+          </div>
         </Modal>
       </div>
       <Rodape />
