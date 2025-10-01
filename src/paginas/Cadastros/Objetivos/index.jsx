@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import Pagination from "../../../componentes/Pagination";
-import Modal from "../../../componentes/Modal"; // Verifique se o caminho para seu componente Modal está correto
-import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../service/objetivoService"; 
+import Modal from "../../../componentes/Modal";
+import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../service/objetivoService";
 
 import { FiEdit } from 'react-icons/fi';
 import { AiOutlineDelete } from 'react-icons/ai';
 
 function Objetivos() {
-    
+
     const [objetivos, definirObjetivos] = useState([]);
     const [paginaAtual, definirPaginaAtual] = useState(0);
     const [tamanhoPagina, definirTamanhoPagina] = useState(10);
@@ -17,15 +17,15 @@ function Objetivos() {
     const [totalElementos, definirTotalElementos] = useState(0);
     const [carregando, definirCarregando] = useState(true);
 
-    
+
     const [exibirModalNovo, definirExibirModalNovo] = useState(false);
     const [exibirModalEditar, definirExibirModalEditar] = useState(false);
     const [exibirModalExcluir, definirExibirModalExcluir] = useState(false);
 
-    
+
     const [objetivoSelecionado, definirObjetivoSelecionado] = useState(null);
 
-    
+
     const recarregarObjetivos = () => {
         buscarObjetivosPaginados(
             definirCarregando,
@@ -41,9 +41,9 @@ function Objetivos() {
         recarregarObjetivos();
     }, [paginaAtual, tamanhoPagina]);
 
-    
+
     const abrirModalNovo = () => {
-        definirObjetivoSelecionado({ nome: '', descricao: ''});
+        definirObjetivoSelecionado({ nome: '', descricao: '' });
         definirExibirModalNovo(true);
     };
 
@@ -64,13 +64,13 @@ function Objetivos() {
         definirObjetivoSelecionado(null);
     };
 
-    
+
     const handleCriar = async () => {
         try {
             await criarObjetivo(objetivoSelecionado);
             fecharModais();
             recarregarObjetivos();
-            alert('Objetivo criado com sucesso!');
+            // alert('Objetivo criado com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao criar objetivo.');
@@ -82,7 +82,7 @@ function Objetivos() {
             await editarObjetivo(objetivoSelecionado);
             fecharModais();
             recarregarObjetivos();
-            alert('Objetivo atualizado com sucesso!');
+            // alert('Objetivo atualizado com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao atualizar objetivo.');
@@ -94,7 +94,7 @@ function Objetivos() {
             await excluirObjetivo(objetivoSelecionado.id);
             fecharModais();
             recarregarObjetivos();
-            alert('Objetivo removido com sucesso!');
+            // alert('Objetivo removido com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao remover objetivo.');
@@ -109,7 +109,7 @@ function Objetivos() {
         }));
     };
 
-    
+
     const renderizarObjetivos = () => {
         if (carregando) return <tr><td colSpan="4" className="text-center py-3">Carregando...</td></tr>;
         if (objetivos.length === 0) return <tr><td colSpan="4" className="text-center py-3">Nenhum objetivo encontrado.</td></tr>;
@@ -117,16 +117,16 @@ function Objetivos() {
         return objetivos.map(objetivo => (
             <tr key={objetivo.id} className="border-bottom">
                 <td className="py-2 px-3">{objetivo.nome}</td>
-                <td className="py-2 px-3">{objetivo.ano}</td>
                 <td className="py-2 px-3">{objetivo.dataCriacao}</td>
-                <td className="py-2 px-3" style={{ width: "10%" }}>
-                    <div className="d-flex justify-content-around">
-                        <button className="btn btn-link p-0" onClick={() => abrirModalEditar(objetivo)}>
-                            <FiEdit style={{ fontSize: '20px', color: '#5f5f5fff' }} />
+                <td className="px-3 text-center">
+                    <div className="dropdown">
+                        <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}>
+                            ⋮
                         </button>
-                        <button className="btn btn-link p-0" onClick={() => abrirModalExcluir(objetivo)}>
-                            <AiOutlineDelete style={{ fontSize: '20px', color: '#5f5f5fff' }} />
-                        </button>
+                        <ul className="dropdown-menu">
+                            <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(objetivo)}>Editar</a></li>
+                            <li><button className="dropdown-item text-danger" onClick={() => abrirModalExcluir(objetivo)}>Excluir</button></li>
+                        </ul>
                     </div>
                 </td>
             </tr>
@@ -164,7 +164,6 @@ function Objetivos() {
                             <thead>
                                 <tr className="table-light">
                                     <th className="p-3">Nome</th>
-                                    <th className="p-3" style={{ width: "10%" }}>Ano</th>
                                     <th className="p-3" style={{ width: "15%" }}>Data de Criação</th>
                                     <th className="p-3 text-center" style={{ width: "10%" }}>Ações</th>
                                 </tr>
@@ -186,7 +185,7 @@ function Objetivos() {
             </div>
             <Rodape />
 
-            
+
             <Modal
                 estaAberto={exibirModalNovo}
                 aoFechar={fecharModais}
