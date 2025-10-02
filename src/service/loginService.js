@@ -1,4 +1,4 @@
-import api from '../api'; // Importa o Axios configurado com interceptors
+import api from '../api';
 
 async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
   try {
@@ -33,7 +33,7 @@ async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
 
 function realizarLogout(navegar) {
   localStorage.removeItem('token');
-  navegar('/'); // Redireciona para a tela de login
+  navegar('/');
 }
 
 export default { login: servicoLogin, logout: realizarLogout };
