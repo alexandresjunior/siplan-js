@@ -139,35 +139,42 @@ function Usuario() {
 
   const carregarOpcoesIndicadores = async () => {
     if (!anoOrganograma || !diretoria) {
-      setOpcoesIndicadores([{ id: '', nome: 'Selecione ano e diretoria primeiro' }]);
+      setOpcoesIndicadores([{ id: 'none', nome: 'Selecione ano e diretoria primeiro' }]);
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
-      const diretoriaId = parseInt(diretoria);
-      if (isNaN(diretoriaId)) {
-        throw new Error('ID da diretoria não é um número válido');
+
+      const elementoId = gerencia ? parseInt(gerencia) : parseInt(diretoria);
+
+      if (isNaN(elementoId)) {
+        throw new Error('ID do elemento organizacional não é um número válido');
       }
-      const url = `http://localhost:8098/indicador/valores/${diretoriaId}`;
-      const { data: texto } = await axios.get(url, {
+
+      const url = `http://localhost:8098/indicador/valores/${elementoId}`;
+
+      const { data } = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
-      const data = texto;
       const indicadores = Array.isArray(data) ? data.map(i => ({
-        id: i.id,
+        id: i.id.toString(),
         nome: i.nomeIndicador || i.nome || i.descricao || 'Sem nome',
-        tipo: i.tipoIndicador?.nome
+        tipo: i.tipoIndicador?.nome || i.tipoIndicador || 'Sem tipo'
       })) : [];
-      setOpcoesIndicadores(indicadores.length > 0 ? indicadores : [{ id: '', nome: 'Nenhum indicador disponível' }]);
+
+      const novosIndicadores = indicadores.length > 0
+        ? indicadores
+        : [{ id: 'none', nome: 'Nenhum indicador disponível' }];
+
+      setOpcoesIndicadores(novosIndicadores);
       setIndicadoresSelecionados([]);
     } catch (erro) {
       console.error('Erro ao carregar indicadores:', erro.message);
-      setOpcoesIndicadores([{ id: '', nome: `Erro ao carregar indicadores: ${erro.message}` }]);
+      setOpcoesIndicadores([{ id: 'error', nome: `Erro ao carregar indicadores: ${erro.message}` }]);
     }
   };
-
 
   const abrirModalIndicadores = (idUsuario) => {
     definirIdUsuarioSelecionado(idUsuario);
@@ -331,7 +338,6 @@ function Usuario() {
       <div className="card-body">
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
-          <label className="form-label">Ano Organograma:</label>
           <select className="form-select" value={anoOrganograma} onChange={(e) => setAnoOrganograma(e.target.value)} required>
             <option value="" disabled>Ano Organograma*</option>
             {Array.from({ length: anoAtual - 2021 }, (_, i) => 2022 + i).map(ano => (
@@ -340,7 +346,6 @@ function Usuario() {
           </select>
         </div>
         <div className="mb-3">
-          <label className="form-label">Diretoria:</label>
           <select className="form-select" value={diretoria} onChange={(e) => setDiretoria(e.target.value)} required>
             <option value="" disabled>Diretoria*</option>
             {opcoesDiretoria.map((opcao) => (
@@ -349,9 +354,8 @@ function Usuario() {
           </select>
         </div>
         <div className="mb-3" style={{ display: diretoria ? 'block' : 'none' }}>
-          <label className="form-label">Gerência:</label>
           <select className="form-select" value={gerencia} onChange={(e) => setGerencia(e.target.value)} required disabled={!diretoria}>
-            <option value="" disabled>Gerência*</option>
+            <option value="" disabled>Diretoria, Gerência ou Coordenação*</option>
             {opcoesGerencia.map((opcao) => (
               <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
             ))}
@@ -386,8 +390,8 @@ function Usuario() {
                       }}
                     />
                   </td>
-                  <td className="py-2 px-3">{indicador.nome || 'Sem nome'}</td>
-                  <td className="py-2 px-3">{indicador.tipo || 'Sem tipo'}</td>
+                  <td className="py-2 px-3">{indicador.nome}</td>
+                  <td className="py-2 px-3">{indicador.tipo}</td>
                 </tr>
               ))}
               {opcoesIndicadores.length === 0 && (
