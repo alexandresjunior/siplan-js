@@ -567,11 +567,11 @@ function Usuario() {
             <div className="card-body">
               <div className="mb-3">
                 <label className="form-label">Nome:</label>
-                <input type="text" className="form-control" value={usuarioEditando.nome || ''} readOnly />
+                <input type="text" className="form-control text-muted" value={usuarioEditando.nome || ''} readOnly disabled/>
               </div>
               <div className="mb-3">
                 <label className="form-label">Lotação:</label>
-                <input type="text" className="form-control" value={usuarioEditando.lotacao || 'Não especificada'} readOnly />
+                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacao || 'Não especificada'} readOnly disabled/>
               </div>
               <h5>Permissões de Acesso</h5>
               <div className="form-check mb-2">
