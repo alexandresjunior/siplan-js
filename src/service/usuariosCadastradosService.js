@@ -68,7 +68,7 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
   }
 };
 
-export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador) => {
+export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador, callbackSucesso) => {
   try {
     const token = localStorage.getItem('token');
 
@@ -84,14 +84,21 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
     const usuarioAtualizado = {
       ...dadosUsuario,
       indicadoresLiberados: indicadoresAtualizados,
-      lotacaoAtual: dadosUsuario.lotacaoAtual ? dadosUsuario.lotacaoAtual.id.toString() : null
+      lotacaoAtual: dadosUsuario.lotacaoAtual
+        ? { id: dadosUsuario.lotacaoAtual.id.toString() } 
+        : null
     };
-    const payload = [usuarioAtualizado];
+
+    const payload = usuarioAtualizado;
 
 
-    const { data: respostaAtualizacao } = await axios.post(URL_ATUALIZAR_USUARIO, payload, {
+    const { data: respostaAtualizacao } = await axios.post(URL_ATUALIZAR_USUARIO, { ...payload }, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
+
+     if (callbackSucesso) {
+        callbackSucesso();
+    }
 
     await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
   } catch (erro) {

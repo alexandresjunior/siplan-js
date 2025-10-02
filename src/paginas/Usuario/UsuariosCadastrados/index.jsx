@@ -46,6 +46,9 @@ function Usuario() {
   const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [exibirModalElementos, definirExibirModalElementos] = useState(false);
   const [elementosOrganizacionais, definirElementosOrganizacionais] = useState([]);
+  const [alertaSucesso, setAlertaSucesso] = useState(false);
+
+
 
   useEffect(() => {
     buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
@@ -210,6 +213,13 @@ function Usuario() {
     setUsuarioEditando(null);
   };
 
+  const mostrarAlertaSucesso = () => { 
+    setAlertaSucesso(true);
+    setTimeout(() => { 
+      setAlertaSucesso(false);
+    }, 2000);
+  };
+
   const handleAdicionarIndicador = async () => {
     if (!anoOrganograma || !diretoria || !gerencia || indicadoresSelecionados.length === 0) {
       setMensagemErro('Todos os campos obrigatórios devem ser preenchidos e pelo menos um indicador deve ser selecionado.');
@@ -228,6 +238,9 @@ function Usuario() {
         };
         await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
+
+      mostrarAlertaSucesso();
+
       fecharModalAdicionar();
       setAnoOrganograma('');
       setDiretoria('');
@@ -264,8 +277,6 @@ function Usuario() {
   const abrirModalElementos = (idUsuario) => {
     definirIdUsuarioSelecionado(idUsuario);
     definirExibirModalElementos(true);
-    // INSIRA AQUI O ENDPOINT PARA BUSCAR OS ELEMENTOS ORGANIZACIONAIS
-    // Exemplo: carregarElementosOrganizacionais(idUsuario);
   };
 
   const fecharModalElementos = () => {
@@ -336,6 +347,7 @@ function Usuario() {
   const renderizarFormularioAdicionar = () => {
     return (
       <div className="card-body">
+
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
           <select className="form-select" value={anoOrganograma} onChange={(e) => setAnoOrganograma(e.target.value)} required>
@@ -469,6 +481,22 @@ function Usuario() {
     <>
       <Cabecalho />
       <div className="container mt-5 mb-3">
+        {alertaSucesso && (
+          <div
+            className="alert alert-success alert-dismissible fade show"
+            role="alert"
+            style={{ position: 'fixed', 
+                     top: '20px', 
+                     left: '50%', 
+                     transform: 'translateX(-50%)', 
+                     zIndex: 2000,
+                     width: '50%',
+                    maxWidth: '500px'
+                   }}
+          >
+            Indicadores salvos com sucesso!
+          </div>
+        )}
         <div className="row mb-3">
           <div className="col">
             <h3 className="mb-0">Usuários Cadastrados</h3>
