@@ -187,9 +187,9 @@ export const manipularAlterarPermissao = async (definirPermissoes, idUsuarioSele
 };
 
 export const manipularExcluir = async (definirUsuarios, definirPaginaAtual, definirCarregando, idUsuario, usuarios, tamanhoPagina, paginaAtual, URL_EXCLUIR_USUARIO) => {
-  if (window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`)) {
     try {
       const token = localStorage.getItem('token');
+      
       const resposta = await axios.delete(`${URL_EXCLUIR_USUARIO}/${idUsuario}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
@@ -202,5 +202,5 @@ export const manipularExcluir = async (definirUsuarios, definirPaginaAtual, defi
       console.error('Erro ao excluir usuário:', erro);
       alert('Falha ao excluir o usuário. Tente novamente.');
     }
-  }
+  
 };

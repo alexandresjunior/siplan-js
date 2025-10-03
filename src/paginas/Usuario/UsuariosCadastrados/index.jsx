@@ -11,13 +11,14 @@ import {
   buscarUsuarios,
   manipularAdicionarIndicador,
   manipularExcluir,
-  manipularAlterarPermissao
+  manipularAlterarPermissao,
+  manipularExcluirIndicador as excluirIndicadorService
 } from "../../../service/usuariosCadastradosService";
 
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
-const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip/excluir';
+const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
 
 function Usuario() {
   const [usuarios, definirUsuarios] = useState([]);
@@ -213,9 +214,9 @@ function Usuario() {
     setUsuarioEditando(null);
   };
 
-  const mostrarAlertaSucesso = () => { 
+  const mostrarAlertaSucesso = () => {
     setAlertaSucesso(true);
-    setTimeout(() => { 
+    setTimeout(() => {
       setAlertaSucesso(false);
     }, 2000);
   };
@@ -257,9 +258,16 @@ function Usuario() {
 
   const manipularExcluirIndicador = (idIndicador) => {
     if (window.confirm(`Tem certeza que deseja excluir o indicador com ID ${idIndicador}?`)) {
-      manipularExcluirIndicador(definirIndicadores, idUsuarioSelecionado, idIndicador, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO);
+      excluirIndicadorService(
+        definirIndicadores,
+        idUsuarioSelecionado,
+        idIndicador,
+        URL_USUARIO_POR_ID,
+        URL_ATUALIZAR_USUARIO
+      );
     }
   };
+
 
   const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && permissoes) {
@@ -284,6 +292,23 @@ function Usuario() {
   };
 
   const abrirModalAdicionarElemento = () => {
+  };
+
+  const handleExcluirUsuario = (idUsuario) => {
+    // 1. O COMPONENTE lida com a confirmação
+    if (window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`)) {
+      // 2. Se confirmado, ele CHAMA o service
+      manipularExcluir(
+        definirUsuarios,
+        definirPaginaAtual,
+        definirCarregando,
+        idUsuario,
+        usuarios,
+        tamanhoPagina,
+        paginaAtual,
+        URL_EXCLUIR_USUARIO
+      );
+    }
   };
 
   const renderizarElementosOrganizacionais = () => {
@@ -465,7 +490,7 @@ function Usuario() {
               <li>
                 <button
                   className="dropdown-item text-danger"
-                  onClick={() => manipularExcluir(definirUsuarios, definirPaginaAtual, definirCarregando, usuario.id, usuarios, tamanhoPagina, paginaAtual, URL_EXCLUIR_USUARIO)}
+                  onClick={() => handleExcluirUsuario(usuario.id)}
                 >
                   Excluir
                 </button>
@@ -485,14 +510,15 @@ function Usuario() {
           <div
             className="alert alert-success alert-dismissible fade show"
             role="alert"
-            style={{ position: 'fixed', 
-                     top: '20px', 
-                     left: '50%', 
-                     transform: 'translateX(-50%)', 
-                     zIndex: 2000,
-                     width: '50%',
-                    maxWidth: '500px'
-                   }}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 2000,
+              width: '50%',
+              maxWidth: '500px'
+            }}
           >
             Indicadores salvos com sucesso!
           </div>
@@ -567,11 +593,11 @@ function Usuario() {
             <div className="card-body">
               <div className="mb-3">
                 <label className="form-label">Nome:</label>
-                <input type="text" className="form-control text-muted" value={usuarioEditando.nome || ''} readOnly disabled/>
+                <input type="text" className="form-control text-muted" value={usuarioEditando.nome || ''} readOnly disabled />
               </div>
               <div className="mb-3">
                 <label className="form-label">Lotação:</label>
-                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacao || 'Não especificada'} readOnly disabled/>
+                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacao || 'Não especificada'} readOnly disabled />
               </div>
               <h5>Permissões de Acesso</h5>
               <div className="form-check mb-2">
