@@ -5,6 +5,7 @@ import './App.css';
 import Indicadores from "./paginas/Cadastros/Indicadores";
 import Usuario from './paginas/Usuario/UsuariosCadastrados';
 import ProtectedRoute from './componentes/ProtecaoDeRota/index';
+import NovoUsuario from "./paginas/Usuario/NovoUsuario";
 
 function App() {
   return (
@@ -166,6 +167,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
+      <Route 
+        path="/usuarios/novo" 
+        element={<NovoUsuario />} />
       </Routes>
     </BrowserRouter>
   );

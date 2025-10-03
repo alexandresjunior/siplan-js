@@ -14,6 +14,7 @@ import {
   manipularAlterarPermissao,
   manipularExcluirIndicador as excluirIndicadorService
 } from "../../../service/usuariosCadastradosService";
+import { Link } from "react-router-dom";
 
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
@@ -528,7 +529,7 @@ function Usuario() {
             <h3 className="mb-0">Usuários Cadastrados</h3>
           </div>
           <div className="col-auto">
-            <a href="#" className="btn btn-primary">Novo Usuário</a>
+            <Link to="/usuarios/novo" className="btn btn-primary">Novo Usuário</Link>
           </div>
         </div>
         <div className="card">
