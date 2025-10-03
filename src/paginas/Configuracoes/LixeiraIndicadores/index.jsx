@@ -28,13 +28,14 @@ function LixeiraIndicadores() {
     useEffect(() => {
         if (unidadeSelecionadaId) {
             carregarIndicadores();
+        }else {
+            setIndicadores([]);
         }
         
     }, [unidadeSelecionadaId, paginaAtual, tamanhoPagina]);
 
     
-    const handleBusca = (idUnidade) => {
-        setIndicadores([]);
+    const handleUnidadeChange = (idUnidade) => {
         setUnidadeSelecionadaId(idUnidade);
         setPaginaAtual(0);
     };
@@ -119,7 +120,7 @@ function LixeiraIndicadores() {
                 </div>
 
                 {mostrarFiltros && (
-                    <Filtros onBuscaClick={handleBusca} setCarregandoFiltros={setCarregandoFiltros} />
+                    <Filtros onUnidadeChange={handleUnidadeChange} setCarregandoFiltros={setCarregandoFiltros} />
                 )}
 
                 {carregandoFiltros && <div className="text-center my-3">Carregando filtros...</div>}
@@ -160,7 +161,7 @@ function LixeiraIndicadores() {
                                     ))
                                 ) : (
                                     <tr><td colSpan="4" className="text-center py-3">
-                                        {unidadeSelecionadaId ? 'Nenhum indicador na lixeira para esta unidade.' : 'Selecione uma estrutura organizacional para começar.'}
+                                        {unidadeSelecionadaId ? 'Nenhum indicador na lixeira para esta unidade.' : 'Selecione uma estrutura organizacional.'}
                                     </td></tr>
                                 )}
                             </tbody>

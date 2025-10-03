@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../service/elementoOrganizacionalService';
 
-const Filtros = ({ onBuscaClick, setCarregandoFiltros }) => {
+const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
     const [anos, setAnos] = useState([]);
     const [diretorias, setDiretorias] = useState([]);
     const [unidades, setUnidades] = useState([]);
@@ -10,7 +10,7 @@ const Filtros = ({ onBuscaClick, setCarregandoFiltros }) => {
     const [diretoriaSelecionada, setDiretoriaSelecionada] = useState('');
     const [unidadeSelecionada, setUnidadeSelecionada] = useState('');
 
-    
+
     useEffect(() => {
         const anoAtual = new Date().getFullYear();
         const listaAnos = [];
@@ -20,41 +20,43 @@ const Filtros = ({ onBuscaClick, setCarregandoFiltros }) => {
         setAnos(listaAnos);
     }, []);
 
-    
+
     useEffect(() => {
+        setDiretorias([]);
+        setUnidades([]);
+        setDiretoriaSelecionada('');
+        setUnidadeSelecionada('');
+        onUnidadeChange(null);
+
         if (anoSelecionado) {
             setCarregandoFiltros(true);
-            setDiretorias([]);
-            setUnidades([]);
-            setDiretoriaSelecionada('');
-            setUnidadeSelecionada('');
             buscarDiretoriasPorAno(anoSelecionado)
                 .then(data => setDiretorias(data))
                 .catch(err => console.error(err))
                 .finally(() => setCarregandoFiltros(false));
         }
-    }, [anoSelecionado, setCarregandoFiltros]);
+    }, [anoSelecionado]);
 
-    
+
     useEffect(() => {
+        setUnidades([]);
+        setUnidadeSelecionada('');
+        onUnidadeChange(null);
+
         if (diretoriaSelecionada && anoSelecionado) {
             setCarregandoFiltros(true);
-            setUnidades([]);
-            setUnidadeSelecionada('');
             buscarUnidadesPorDiretoria(anoSelecionado, diretoriaSelecionada)
                 .then(data => setUnidades(data))
                 .catch(err => console.error(err))
                 .finally(() => setCarregandoFiltros(false));
         }
-    }, [diretoriaSelecionada, anoSelecionado, setCarregandoFiltros]);
+    }, [diretoriaSelecionada]);
 
-    const handleBusca = () => {
+    useEffect(() => {
         if (unidadeSelecionada) {
-            onBuscaClick(unidadeSelecionada);
-        } else {
-            alert('Por favor, selecione todos os níveis da estrutura.');
+            onUnidadeChange(unidadeSelecionada);
         }
-    };
+    }, [unidadeSelecionada]);
 
     return (
         <div className="card mb-4">
@@ -67,24 +69,19 @@ const Filtros = ({ onBuscaClick, setCarregandoFiltros }) => {
                             {anos.map(ano => <option key={ano} value={ano}>{ano}</option>)}
                         </select>
                     </div>
-                    <div className="col-md-3">
+                    <div className="col-md-4">
                         <label htmlFor="diretoria" className="form-label">Diretoria</label>
                         <select id="diretoria" className="form-select" value={diretoriaSelecionada} onChange={e => setDiretoriaSelecionada(e.target.value)} disabled={!anoSelecionado}>
                             <option value="">Selecione...</option>
                             {diretorias.map(dir => <option key={dir.id} value={dir.id}>{dir.sigla}</option>)}
                         </select>
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-5">
                         <label htmlFor="unidade" className="form-label">Gerência, Diretoria ou Coordenação</label>
                         <select id="unidade" className="form-select" value={unidadeSelecionada} onChange={e => setUnidadeSelecionada(e.target.value)} disabled={!diretoriaSelecionada}>
                             <option value="">Selecione...</option>
                             {unidades.map(un => <option key={un.id} value={un.id}>{un.nome}</option>)}
                         </select>
-                    </div>
-                    <div className="col-md-2">
-                        <button className="btn btn-primary w-100" onClick={handleBusca} disabled={!unidadeSelecionada}>
-                            Buscar
-                        </button>
                     </div>
                 </div>
             </div>
