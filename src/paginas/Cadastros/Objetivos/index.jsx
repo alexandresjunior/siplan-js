@@ -70,7 +70,6 @@ function Objetivos() {
             await criarObjetivo(objetivoSelecionado);
             fecharModais();
             recarregarObjetivos();
-            // alert('Objetivo criado com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao criar objetivo.');
@@ -82,7 +81,6 @@ function Objetivos() {
             await editarObjetivo(objetivoSelecionado);
             fecharModais();
             recarregarObjetivos();
-            // alert('Objetivo atualizado com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao atualizar objetivo.');
@@ -94,7 +92,6 @@ function Objetivos() {
             await excluirObjetivo(objetivoSelecionado.id);
             fecharModais();
             recarregarObjetivos();
-            // alert('Objetivo removido com sucesso!');
         } catch (error) {
             console.error(error);
             alert('Erro ao remover objetivo.');
@@ -117,15 +114,15 @@ function Objetivos() {
         return objetivos.map(objetivo => (
             <tr key={objetivo.id} className="border-bottom">
                 <td className="py-2 px-3">{objetivo.nome}</td>
-                <td className="py-2 px-3">{objetivo.dataCriacao}</td>
+                <td className="py-2 px-3 text-center">{objetivo.dataCriacao}</td>
                 <td className="px-3 text-center">
                     <div className="dropdown">
                         <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}>
                             ⋮
                         </button>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(objetivo)}>Editar</a></li>
-                            <li><button className="dropdown-item text-danger" onClick={() => abrirModalExcluir(objetivo)}>Excluir</button></li>
+                            <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(objetivo)}><FiEdit className="me-1"/> Editar</a></li>
+                            <li><button className="dropdown-item text-danger" onClick={() => abrirModalExcluir(objetivo)}><AiOutlineDelete className="me-1"/> Excluir</button></li>
                         </ul>
                     </div>
                 </td>

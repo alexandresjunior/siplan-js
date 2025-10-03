@@ -8,6 +8,7 @@ import ProtectedRoute from './componentes/ProtecaoDeRota/index';
 import NovoUsuario from "./paginas/Usuario/NovoUsuario";
 import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
 import Objetivos from "./paginas/Cadastros/Objetivos";
+import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
 
 function App() {
   return (
@@ -125,7 +126,7 @@ function App() {
           path="/configuracoes/lixeira-indicadores"
           element={
             <ProtectedRoute>
-              <></>
+              <LixeiraIndicadores />
             </ProtectedRoute>
           }
         />
