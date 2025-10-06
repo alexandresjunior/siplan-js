@@ -22,12 +22,14 @@ function DataFechamento() {
     const [totalPaginasDiretorias, setTotalPaginasDiretorias] = useState(0);
     const [totalElementosDiretorias, setTotalElementosDiretorias] = useState(0);
     const [carregandoDiretorias, setCarregandoDiretorias] = useState(true);
+
     const [listaCoordenacoes, setListaCoordenacoes] = useState([]);
     const [paginaAtualCoordenacoes, setPaginaAtualCoordenacoes] = useState(0);
     const [tamanhoPaginaCoordenacoes, setTamanhoPaginaCoordenacoes] = useState(10);
     const [totalPaginasCoordenacoes, setTotalPaginasCoordenacoes] = useState(0);
     const [totalElementosCoordenacoes, setTotalElementosCoordenacoes] = useState(0);
     const [carregandoCoordenacoes, setCarregandoCoordenacoes] = useState(true);
+
     const [exibirModalNovo, setExibirModalNovo] = useState(false);
     const [exibirModalEditar, setExibirModalEditar] = useState(false);
     const [exibirModalExcluir, setExibirModalExcluir] = useState(false);
@@ -35,9 +37,11 @@ function DataFechamento() {
     const [opcoesCiclos, setOpcoesCiclos] = useState([]);
     const [opcoesDiretorias, setOpcoesDiretorias] = useState([]);
 
+    // 🔁 Função central de recarregar dados
     const recarregarDados = () => {
         const settersDiretorias = { setLista: setListaDiretorias, setTotalPaginas: setTotalPaginasDiretorias, setTotalElementos: setTotalElementosDiretorias, setCarregando: setCarregandoDiretorias };
         const settersCoordenacoes = { setLista: setListaCoordenacoes, setTotalPaginas: setTotalPaginasCoordenacoes, setTotalElementos: setTotalElementosCoordenacoes, setCarregando: setCarregandoCoordenacoes };
+        
         buscarConfiguracoes(settersDiretorias, paginaAtualDiretorias, tamanhoPaginaDiretorias, 2, URL_API_PAGINADO);
         buscarConfiguracoes(settersCoordenacoes, paginaAtualCoordenacoes, tamanhoPaginaCoordenacoes, 1, URL_API_PAGINADO);
     };
@@ -49,29 +53,44 @@ function DataFechamento() {
     useEffect(() => {
         const carregarOpcoes = async () => {
             try {
-                const [ciclosData, diretoriasData] = await Promise.all([buscarCiclos(URL_CICLOS), buscarDiretorias(URL_DIRETORIAS)]);
+                const [ciclosData, diretoriasData] = await Promise.all([
+                    buscarCiclos(URL_CICLOS),
+                    buscarDiretorias(URL_DIRETORIAS)
+                ]);
                 setOpcoesCiclos(ciclosData);
                 setOpcoesDiretorias(diretoriasData);
-            } catch (error) { console.error("Erro ao carregar opções para o modal:", error); }
+            } catch (error) {
+                console.error("Erro ao carregar opções para o modal:", error);
+            }
         };
         carregarOpcoes();
     }, []);
 
-    const fecharModais = () => { setExibirModalNovo(false); setExibirModalEditar(false); setExibirModalExcluir(false); setConfigSelecionada(null); };
+    // 🧩 Funções auxiliares de modal
+    const fecharModais = () => {
+        setExibirModalNovo(false);
+        setExibirModalEditar(false);
+        setExibirModalExcluir(false);
+        setConfigSelecionada(null);
+    };
 
     const abrirModalNovo = (tipoConfiguracao) => {
-        setConfigSelecionada({ ano: new Date().getFullYear(), ciclo: null, diretoria: null, dataFechamento: '', tipoConfiguracao });
+        setConfigSelecionada({
+            ano: new Date().getFullYear(),
+            ciclo: null,
+            diretoria: null,
+            dataFechamento: '',
+            tipoConfiguracao
+        });
         setExibirModalNovo(true);
     };
 
-    const abrirModalEditar = (item) => {
+    const abrirModalEditar = (config) => {
         const configParaForm = {
-            id: item.raw.id,
-            ano: item.raw.ano,
-            ciclo: item.raw.ciclo, 
-            diretoria: item.raw.diretoria,
-            dataFechamento: item.raw.dataFechamento ? new Date(item.raw.dataFechamento).toISOString().split('T')[0] : '',
-            tipoConfiguracao: item.raw.tipoConfiguracao
+            ...config.raw,
+            dataFechamento: config.raw.dataFechamento
+                ? new Date(config.raw.dataFechamento).toISOString().split('T')[0]
+                : ''
         };
         setConfigSelecionada(configParaForm);
         setExibirModalEditar(true);
@@ -81,23 +100,32 @@ function DataFechamento() {
         setConfigSelecionada(config);
         setExibirModalExcluir(true);
     };
-    
+
+    // 📝 Correção no handleFormChange
     const handleFormChange = (e) => {
         const { name, value } = e.target;
+
         if (name === "ciclo") {
-            setConfigSelecionada(prev => ({ ...prev, [name]: parseInt(value) }));
+            setConfigSelecionada(prev => ({ ...prev, ciclo: { id: parseInt(value) } }));
         } else if (name === "diretoria") {
-            setConfigSelecionada(prev => ({ ...prev, [name]: { id: parseInt(value) } }));
+            setConfigSelecionada(prev => ({ ...prev, diretoria: { id: parseInt(value) } }));
         } else {
             setConfigSelecionada(prev => ({ ...prev, [name]: value }));
         }
     };
-    
+
+    // 🕒 Converte data para o formato ISO completo
+    const prepararConfig = (config) => ({
+        ...config,
+        dataFechamento: config.dataFechamento
+            ? new Date(config.dataFechamento + "T23:59:59.000Z").toISOString()
+            : null
+    });
+
+    // 🧠 CRUD
     const handleCriar = async () => {
         try {
-            const payload = { ...configSelecionada };
-            if (!payload.dataFechamento) payload.dataFechamento = null;
-            await criarConfiguracao(payload, URL_API_BASE);
+            await criarConfiguracao(prepararConfig(configSelecionada), URL_API_BASE);
             fecharModais();
             recarregarDados();
         } catch (error) {
@@ -108,9 +136,7 @@ function DataFechamento() {
 
     const handleEditar = async () => {
         try {
-            const payload = { ...configSelecionada };
-            if (!payload.dataFechamento) payload.dataFechamento = null;
-            await atualizarConfiguracao(payload, URL_API_BASE);
+            await atualizarConfiguracao(prepararConfig(configSelecionada), URL_API_BASE);
             fecharModais();
             recarregarDados();
         } catch (error) {
@@ -136,9 +162,12 @@ function DataFechamento() {
         }
     };
 
+    // 🧾 Renderização da tabela
     const renderizarLinhas = (lista, carregando) => {
-        if (carregando) return <tr><td colSpan="5" className="text-center py-4">Carregando...</td></tr>;
-        if (lista.length === 0) return <tr><td colSpan="5" className="text-center py-4">Nenhum registro encontrado.</td></tr>;
+        if (carregando)
+            return <tr><td colSpan="5" className="text-center py-4">Carregando...</td></tr>;
+        if (lista.length === 0)
+            return <tr><td colSpan="5" className="text-center py-4">Nenhum registro encontrado.</td></tr>;
 
         return lista.map(item => (
             <tr key={item.id}>
@@ -148,104 +177,196 @@ function DataFechamento() {
                 <td className="text-center">{item.dataFechamento}</td>
                 <td className="text-center">
                     <div className="dropdown">
-                        <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}> ⋮ </button>
+                        <button
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            style={{ fontSize: "1.5em", background: "none", border: "none" }}
+                        >
+                            ⋮
+                        </button>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item d-flex align-items-center" href="#" onClick={() => abrirModalEditar(item)}><FiEdit className="me-2" /> Editar</a></li>
-                            <li><button className="dropdown-item text-danger d-flex align-items-center" onClick={() => abrirModalExcluir(item)}><AiOutlineDelete className="me-2" /> Excluir</button></li>
+                            <li>
+                                <a
+                                    className="dropdown-item d-flex align-items-center"
+                                    href="#"
+                                    onClick={() => abrirModalEditar(item)}
+                                >
+                                    <FiEdit className="me-2" /> Editar
+                                </a>
+                            </li>
+                            <li>
+                                <button
+                                    className="dropdown-item text-danger d-flex align-items-center"
+                                    onClick={() => abrirModalExcluir(item)}
+                                >
+                                    <AiOutlineDelete className="me-2" /> Excluir
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </td>
             </tr>
         ));
     };
-    
+
+    // 🧮 Formulário dos modais
     const renderizarFormulario = () => (
         <div>
             <div className="mb-3">
                 <label className="form-label">Ano</label>
-                <input type="number" name="ano" className="form-control" value={configSelecionada?.ano || ''} onChange={handleFormChange} />
+                <input
+                    type="number"
+                    name="ano"
+                    className="form-control"
+                    value={configSelecionada?.ano || ''}
+                    onChange={handleFormChange}
+                />
             </div>
             <div className="mb-3">
                 <label className="form-label">Ciclo</label>
-                <select name="ciclo" className="form-select" value={configSelecionada?.ciclo?.id || configSelecionada?.ciclo || ''} onChange={handleFormChange}>
+                <select
+                    name="ciclo"
+                    className="form-select"
+                    value={configSelecionada?.ciclo?.id || ''}
+                    onChange={handleFormChange}
+                >
                     <option value="">Selecione um Ciclo</option>
-                    {opcoesCiclos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    {opcoesCiclos.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
                 </select>
             </div>
             <div className="mb-3">
                 <label className="form-label">Diretoria / Gerência / Coordenação</label>
-                <select name="diretoria" className="form-select" value={configSelecionada?.diretoria?.id || ''} onChange={handleFormChange}>
+                <select
+                    name="diretoria"
+                    className="form-select"
+                    value={configSelecionada?.diretoria?.id || ''}
+                    onChange={handleFormChange}
+                >
                     <option value="">Selecione uma Unidade</option>
-                    {opcoesDiretorias.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                    {opcoesDiretorias.map(d => (
+                        <option key={d.id} value={d.id}>{d.nome}</option>
+                    ))}
                 </select>
             </div>
             <div className="mb-3">
                 <label className="form-label">Data de Fechamento</label>
-                <input type="date" name="dataFechamento" className="form-control" value={configSelecionada?.dataFechamento || ''} onChange={handleFormChange} />
+                <input
+                    type="date"
+                    name="dataFechamento"
+                    className="form-control"
+                    value={configSelecionada?.dataFechamento || ''}
+                    onChange={handleFormChange}
+                />
             </div>
         </div>
     );
-    
+
     return (
         <>
             <Cabecalho />
             <div className="container mt-5 mb-3">
+                {/* Diretoria / Gerência */}
                 <div className="card mb-5">
                     <div className="card-header d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">Diretorias e Gerências</h4>
-                        <button onClick={() => abrirModalNovo(2)} className="btn btn-primary">Nova Diretoria e Gerência</button>
+                        <button onClick={() => abrirModalNovo(2)} className="btn btn-primary">
+                            Nova Diretoria e Gerência
+                        </button>
                     </div>
                     <div className="card-body">
                         <table className="table table-striped">
                             <thead>
                                 <tr>
-                                    <th className="p-3" style={{ width: '40%' }}>Nome</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ciclo</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ano</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Data de Fechamento</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ações</th>
+                                    <th style={{ width: '40%' }}>Nome</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ciclo</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ano</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Data de Fechamento</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {renderizarLinhas(listaDiretorias, carregandoDiretorias)}
                             </tbody>
                         </table>
-                        <Pagination estilos="d-flex justify-content-between align-items-center mt-4" pagina={paginaAtualDiretorias} definirPagina={setPaginaAtualDiretorias} totalPaginas={totalPaginasDiretorias} totalElementos={totalElementosDiretorias} tamanho={tamanhoPaginaDiretorias} definirTamanho={setTamanhoPaginaDiretorias} />
+                        <Pagination
+                            estilos="d-flex justify-content-between align-items-center mt-4"
+                            pagina={paginaAtualDiretorias}
+                            definirPagina={setPaginaAtualDiretorias}
+                            totalPaginas={totalPaginasDiretorias}
+                            totalElementos={totalElementosDiretorias}
+                            tamanho={tamanhoPaginaDiretorias}
+                            definirTamanho={setTamanhoPaginaDiretorias}
+                        />
                     </div>
                 </div>
+
+                {/* Coordenação */}
                 <div className="card">
                     <div className="card-header d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">Coordenações</h4>
-                        <button onClick={() => abrirModalNovo(1)} className="btn btn-primary">Nova Coordenação</button>
+                        <button onClick={() => abrirModalNovo(1)} className="btn btn-primary">
+                            Nova Coordenação
+                        </button>
                     </div>
                     <div className="card-body">
                         <table className="table table-striped">
                             <thead>
                                 <tr>
-                                    <th className="p-3" style={{ width: '40%' }}>Nome</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ciclo</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ano</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Data de Fechamento</th>
-                                    <th className="p-3 text-center" style={{ width: '15%' }}>Ações</th>
+                                    <th style={{ width: '40%' }}>Nome</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ciclo</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ano</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Data de Fechamento</th>
+                                    <th className="text-center" style={{ width: '15%' }}>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {renderizarLinhas(listaCoordenacoes, carregandoCoordenacoes)}
                             </tbody>
                         </table>
-                        <Pagination estilos="d-flex justify-content-between align-items-center mt-4" pagina={paginaAtualCoordenacoes} definirPagina={setPaginaAtualCoordenacoes} totalPaginas={totalPaginasCoordenacoes} totalElementos={totalElementosCoordenacoes} tamanho={tamanhoPaginaCoordenacoes} definirTamanho={setTamanhoPaginaCoordenacoes} />
+                        <Pagination
+                            estilos="d-flex justify-content-between align-items-center mt-4"
+                            pagina={paginaAtualCoordenacoes}
+                            definirPagina={setPaginaAtualCoordenacoes}
+                            totalPaginas={totalPaginasCoordenacoes}
+                            totalElementos={totalElementosCoordenacoes}
+                            tamanho={tamanhoPaginaCoordenacoes}
+                            definirTamanho={setTamanhoPaginaCoordenacoes}
+                        />
                     </div>
                 </div>
             </div>
-            <Modal estaAberto={exibirModalNovo} aoFechar={fecharModais} titulo="Nova Configuração de Fechamento" botoesAcao={[{ label: 'Salvar', className: 'btn btn-primary', onClick: handleCriar }]}>
+
+            {/* Modais */}
+            <Modal
+                estaAberto={exibirModalNovo}
+                aoFechar={fecharModais}
+                titulo="Nova Configuração de Fechamento"
+                botoesAcao={[{ label: 'Salvar', className: 'btn btn-primary', onClick: handleCriar }]}
+            >
                 {renderizarFormulario()}
             </Modal>
-            <Modal estaAberto={exibirModalEditar} aoFechar={fecharModais} titulo="Editar Configuração de Fechamento" botoesAcao={[{ label: 'Salvar Alterações', className: 'btn btn-primary', onClick: handleEditar }]}>
+
+            <Modal
+                estaAberto={exibirModalEditar}
+                aoFechar={fecharModais}
+                titulo="Editar Configuração de Fechamento"
+                botoesAcao={[{ label: 'Salvar Alterações', className: 'btn btn-primary', onClick: handleEditar }]}
+            >
                 {renderizarFormulario()}
             </Modal>
-            <Modal estaAberto={exibirModalExcluir} aoFechar={fecharModais} titulo="Confirmar Exclusão" botoesAcao={[{ label: 'Excluir', className: 'btn btn-danger', onClick: handleExcluir }]}>
+
+            <Modal
+                estaAberto={exibirModalExcluir}
+                aoFechar={fecharModais}
+                titulo="Confirmar Exclusão"
+                botoesAcao={[{ label: 'Excluir', className: 'btn btn-danger', onClick: handleExcluir }]}
+            >
                 <p>Você tem certeza que deseja excluir o registro para <strong>{configSelecionada?.nome}</strong>?</p>
             </Modal>
+
             <Rodape />
         </>
     );

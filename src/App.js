@@ -10,6 +10,7 @@ import Objetivos from "./paginas/Cadastros/Objetivos";
 import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
 import CalendarioReunioes from "./paginas/Aderencia/CalendarioReunioes";
 import Comites from "./paginas/Cadastros/Comites";
+import DataFechamento from "./paginas/Aderencia/DataFechamento"; 
 import './App.css';
 
 function App() {
@@ -68,8 +69,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        
         <Route
           path="/cadastros/comites"
           element={
@@ -78,8 +77,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
-        
         <Route
           path="/cadastros/objetivos"
           element={
@@ -160,14 +157,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/aderencia/data-fechamento"
           element={
             <ProtectedRoute>
-              <></>
+              <DataFechamento /> 
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/aderencia/calendario-reunioes"
           element={
