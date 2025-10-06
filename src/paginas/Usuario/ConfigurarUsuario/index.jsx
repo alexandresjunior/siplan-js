@@ -196,7 +196,7 @@ function ConfigurarUsuario() {
                                     <button 
                                         type="button" 
                                         className="btn btn-outline-secondary me-2"
-                                        onClick={() => navigate('/cadastros/novousuario')}
+                                        onClick={() => navigate('/usuarios/novo')}
                                         disabled={carregando}
                                     >
                                         Voltar
