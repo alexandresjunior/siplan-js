@@ -50,7 +50,7 @@ function NovoUsuario() {
             <div className="container mt-5 mb-5">
                 <div className="row justify-content-center">
                     <div className="col-md-8 col-lg-6">
-                        <h3 className="mb-4">Buscar Usuário para Cadastro/Edição</h3>
+                        <h3 className="mb-4">Cadastrar Novo Usuário</h3>
                         
                         {/* Área de Mensagens de Feedback */}
                         {mensagem && (
