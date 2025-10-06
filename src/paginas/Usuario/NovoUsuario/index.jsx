@@ -1,55 +1,66 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { buscarUsuarioPorLogin } from '../../../service/novoUsuarioService';
+import { obterUsuarioPorLogin } from '../../../service/novoUsuarioService';
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';
 
-// Supondo que você define a URL aqui ou a importa de algum arquivo de constantes
-const URL_BUSCAR_POR_LOGIN = 'http://localhost:8098/usuariosip/buscar-por-login';
-
 function NovoUsuario() {
     const [loginRede, setLoginRede] = useState('');
-    const [carregando, setCarregando] = useState(false); // Novo estado para loading
+    const [carregando, setCarregando] = useState(false);
+    // Removemos 'usuarioEncontrado'
+    const [mensagem, setMensagem] = useState('');
     const navigate = useNavigate();
 
     const manipularBuscarUsuario = async () => {
+        setMensagem('');
+        
         if (loginRede.trim() === '') {
-            alert('Por favor, insira o login de rede.');
+            setMensagem('Por favor, insira o login de rede.');
             return;
         }
         
         setCarregando(true);
 
         try {
-            // 💡 Chama o service para fazer a requisição HTTP
-            const dadosUsuario = await buscarUsuarioPorLogin(loginRede, URL_BUSCAR_POR_LOGIN);
+            const dados = await obterUsuarioPorLogin(loginRede);
             
-            // Sucesso: Lidar com os dados (ex: salvar no estado, redirecionar para tela de confirmação)
-            alert(`Usuário encontrado: ${dadosUsuario.nome || dadosUsuario.login}`);
-            console.log('Dados do usuário:', dadosUsuario);
-
-            // 🚨 PRÓXIMO PASSO: Você pode redirecionar para a próxima tela de cadastro, 
-            // passando os dados ou o login.
+            // ✅ AÇÃO PRINCIPAL: Navega para a próxima página, passando os dados do usuário no objeto state
+            navigate(`/cadastros/configurar-usuario`, { 
+                state: { usuarioData: dados } 
+            });
 
         } catch (erro) {
-            // Lidar com falha: Usuário não encontrado, erro de servidor, etc.
-            const mensagem = erro.response && erro.response.data 
-                ? erro.response.data 
-                : 'Falha ao buscar usuário. Verifique o login e tente novamente.';
+            // Se o Axios retornar 404 (Usuário não encontrado), a mensagem de erro será tratada aqui.
+            const msgErro = erro.response && erro.response.status === 404
+                ? `Usuário com login "${loginRede}" não encontrado no Siplan. Inicie o cadastro.`
+                : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
             
-            alert(mensagem);
+            setMensagem(msgErro);
             
         } finally {
             setCarregando(false);
         }
     };
+
+    // Removemos a função renderizarResultado, pois a exibição será feita na próxima página.
+
     return (
         <>
             <Cabecalho />
             <div className="container mt-5 mb-5">
                 <div className="row justify-content-center">
                     <div className="col-md-8 col-lg-6">
-                        <h3 className="mb-4">Cadastrar Novo Usuário</h3>
+                        <h3 className="mb-4">Buscar Usuário para Cadastro/Edição</h3>
+                        
+                        {/* Área de Mensagens de Feedback */}
+                        {mensagem && (
+                            // Se a busca falhou, geralmente é alert-danger, a menos que você queira 
+                            // um feedback específico de sucesso (que agora é a navegação).
+                            <div className={`alert alert-danger fade show`} role="alert">
+                                {mensagem}
+                            </div>
+                        )}
+                        
                         <div className="card shadow-sm">
                             <div className="card-body p-4">
                                 
@@ -64,6 +75,7 @@ function NovoUsuario() {
                                         value={loginRede}
                                         onChange={(e) => setLoginRede(e.target.value)}
                                         required
+                                        disabled={carregando}
                                     />
                                 </div>
                                 <div className="d-flex justify-content-end mt-4">
@@ -71,6 +83,7 @@ function NovoUsuario() {
                                         type="button" 
                                         className="btn btn-outline-secondary me-2"
                                         onClick={() => navigate('/cadastros/usuarioscadastrados')} 
+                                        disabled={carregando}
                                     >
                                         Voltar
                                     </button>
@@ -78,8 +91,13 @@ function NovoUsuario() {
                                         type="submit"
                                         className="btn btn-primary"
                                         onClick={manipularBuscarUsuario}
+                                        disabled={carregando}
                                     >
-                                        Buscar
+                                        {carregando ? (
+                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        ) : (
+                                            "Buscar Usuário"
+                                        )}
                                     </button>
                                 </div>
                             </div>
