@@ -3,9 +3,10 @@ import { Rodape } from '../../../componentes/Rodape';
 import Cabecalho from "../../../componentes/Cabecalho";
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
-import { FaUndo, FaTrash } from 'react-icons/fa';
 import { buscarIndicadoresExcluidosPaginados, restaurarIndicador, excluirIndicadorPermanentemente } from "../../../service/indicadorService";
 import Filtros from "../../../componentes/Filtros";
+
+import { FaUndo, FaTrash } from 'react-icons/fa';
 
 function LixeiraIndicadores() {
 
