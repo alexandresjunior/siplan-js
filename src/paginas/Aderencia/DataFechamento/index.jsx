@@ -9,6 +9,7 @@ import {
     buscarConfiguracoes, criarConfiguracao, atualizarConfiguracao, excluirConfiguracao,
     buscarCiclos, buscarDiretorias
 } from "../../../service/dataFechamentoService";
+import axios from 'axios';
 
 const URL_API_PAGINADO = 'http://localhost:8098/aderenciaconfiguracao/buscaPaginadaTipoConfiguracao';
 const URL_API_BASE = 'http://localhost:8098/aderenciaconfiguracao';
@@ -37,7 +38,6 @@ function DataFechamento() {
     const [opcoesCiclos, setOpcoesCiclos] = useState([]);
     const [opcoesDiretorias, setOpcoesDiretorias] = useState([]);
 
-    // 🔁 Função central de recarregar dados
     const recarregarDados = () => {
         const settersDiretorias = { setLista: setListaDiretorias, setTotalPaginas: setTotalPaginasDiretorias, setTotalElementos: setTotalElementosDiretorias, setCarregando: setCarregandoDiretorias };
         const settersCoordenacoes = { setLista: setListaCoordenacoes, setTotalPaginas: setTotalPaginasCoordenacoes, setTotalElementos: setTotalElementosCoordenacoes, setCarregando: setCarregandoCoordenacoes };
@@ -66,7 +66,6 @@ function DataFechamento() {
         carregarOpcoes();
     }, []);
 
-    // 🧩 Funções auxiliares de modal
     const fecharModais = () => {
         setExibirModalNovo(false);
         setExibirModalEditar(false);
@@ -85,28 +84,45 @@ function DataFechamento() {
         setExibirModalNovo(true);
     };
 
-    const abrirModalEditar = (config) => {
-        const configParaForm = {
-            ...config.raw,
-            dataFechamento: config.raw.dataFechamento
-                ? new Date(config.raw.dataFechamento).toISOString().split('T')[0]
-                : ''
-        };
-        setConfigSelecionada(configParaForm);
-        setExibirModalEditar(true);
+    const abrirModalEditar = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert("Usuário não autenticado. Por favor, faça o login novamente.");
+                return;
+            }
+
+            const { data } = await axios.get(`${URL_API_BASE}/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const configParaForm = {
+                ...data,
+                dataFechamento: data.dataFechamento
+                    ? new Date(data.dataFechamento).toISOString().split('T')[0]
+                    : ''
+            };
+            setConfigSelecionada(configParaForm);
+            setExibirModalEditar(true);
+        } catch (error) {
+            console.error(`Erro ao buscar configuração com id ${id}:`, error);
+            alert('Falha ao carregar os dados para edição. Verifique o console.');
+        }
     };
 
     const abrirModalExcluir = (config) => {
         setConfigSelecionada(config);
         setExibirModalExcluir(true);
     };
-
-    // 📝 Correção no handleFormChange
+    
     const handleFormChange = (e) => {
         const { name, value } = e.target;
 
         if (name === "ciclo") {
-            setConfigSelecionada(prev => ({ ...prev, ciclo: { id: parseInt(value) } }));
+            setConfigSelecionada(prev => ({ ...prev, ciclo: parseInt(value) }));
         } else if (name === "diretoria") {
             setConfigSelecionada(prev => ({ ...prev, diretoria: { id: parseInt(value) } }));
         } else {
@@ -114,15 +130,13 @@ function DataFechamento() {
         }
     };
 
-    // 🕒 Converte data para o formato ISO completo
     const prepararConfig = (config) => ({
         ...config,
         dataFechamento: config.dataFechamento
-            ? new Date(config.dataFechamento + "T23:59:59.000Z").toISOString()
+            ? new Date(config.dataFechamento + "T03:00:00.000Z").toISOString()
             : null
     });
 
-    // 🧠 CRUD
     const handleCriar = async () => {
         try {
             await criarConfiguracao(prepararConfig(configSelecionada), URL_API_BASE);
@@ -162,7 +176,6 @@ function DataFechamento() {
         }
     };
 
-    // 🧾 Renderização da tabela
     const renderizarLinhas = (lista, carregando) => {
         if (carregando)
             return <tr><td colSpan="5" className="text-center py-4">Carregando...</td></tr>;
@@ -174,7 +187,9 @@ function DataFechamento() {
                 <td>{item.nome}</td>
                 <td className="text-center">{item.ciclo}</td>
                 <td className="text-center">{item.ano}</td>
-                <td className="text-center">{item.dataFechamento}</td>
+                <td className="text-center">
+                    {item.dataFechamento || '—'}
+                </td>
                 <td className="text-center">
                     <div className="dropdown">
                         <button
@@ -190,7 +205,7 @@ function DataFechamento() {
                                 <a
                                     className="dropdown-item d-flex align-items-center"
                                     href="#"
-                                    onClick={() => abrirModalEditar(item)}
+                                    onClick={(e) => { e.preventDefault(); abrirModalEditar(item.id); }}
                                 >
                                     <FiEdit className="me-2" /> Editar
                                 </a>
@@ -210,7 +225,6 @@ function DataFechamento() {
         ));
     };
 
-    // 🧮 Formulário dos modais
     const renderizarFormulario = () => (
         <div>
             <div className="mb-3">
@@ -228,7 +242,7 @@ function DataFechamento() {
                 <select
                     name="ciclo"
                     className="form-select"
-                    value={configSelecionada?.ciclo?.id || ''}
+                    value={configSelecionada?.ciclo || ''}
                     onChange={handleFormChange}
                 >
                     <option value="">Selecione um Ciclo</option>
@@ -268,12 +282,11 @@ function DataFechamento() {
         <>
             <Cabecalho />
             <div className="container mt-5 mb-3">
-                {/* Diretoria / Gerência */}
                 <div className="card mb-5">
                     <div className="card-header d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">Diretorias e Gerências</h4>
                         <button onClick={() => abrirModalNovo(2)} className="btn btn-primary">
-                            Nova Diretoria e Gerência
+                            Nova Data de Fechamento
                         </button>
                     </div>
                     <div className="card-body">
@@ -302,13 +315,11 @@ function DataFechamento() {
                         />
                     </div>
                 </div>
-
-                {/* Coordenação */}
                 <div className="card">
                     <div className="card-header d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">Coordenações</h4>
                         <button onClick={() => abrirModalNovo(1)} className="btn btn-primary">
-                            Nova Coordenação
+                            Nova Data de Fechamento
                         </button>
                     </div>
                     <div className="card-body">
@@ -338,8 +349,6 @@ function DataFechamento() {
                     </div>
                 </div>
             </div>
-
-            {/* Modais */}
             <Modal
                 estaAberto={exibirModalNovo}
                 aoFechar={fecharModais}
@@ -348,7 +357,6 @@ function DataFechamento() {
             >
                 {renderizarFormulario()}
             </Modal>
-
             <Modal
                 estaAberto={exibirModalEditar}
                 aoFechar={fecharModais}
@@ -357,7 +365,6 @@ function DataFechamento() {
             >
                 {renderizarFormulario()}
             </Modal>
-
             <Modal
                 estaAberto={exibirModalExcluir}
                 aoFechar={fecharModais}
@@ -366,7 +373,6 @@ function DataFechamento() {
             >
                 <p>Você tem certeza que deseja excluir o registro para <strong>{configSelecionada?.nome}</strong>?</p>
             </Modal>
-
             <Rodape />
         </>
     );
