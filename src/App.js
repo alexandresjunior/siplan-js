@@ -6,7 +6,7 @@ import Indicadores from "./paginas/Cadastros/Indicadores";
 import Usuario from './paginas/Usuario/UsuariosCadastrados';
 import ProtectedRoute from './componentes/ProtecaoDeRota/index';
 import NovoUsuario from "./paginas/Usuario/NovoUsuario";
-import ConfigurarUsuario from "./paginas/Usuario/ConfigurarUsuario";
+import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
 
 function App() {
   return (
@@ -175,7 +175,7 @@ function App() {
 
         <Route
           path="/cadastros/configurar-usuario"
-          element={<ConfigurarUsuario />}
+          element={<ConfigurarNovoUsuario />}
         />
 
       </Routes>
