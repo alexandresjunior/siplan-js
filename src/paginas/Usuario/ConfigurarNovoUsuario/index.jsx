@@ -64,6 +64,7 @@ function ConfigurarNovoUsuario() {
         switch (key) {
             case 'cpf': return 'CPF';
             case 'lotacaoAtual': return 'Lotação Atual';
+            case 'siglaLotacaoAtual': return 'Sigla Lotação Atual';
             case 'ativo': return 'Status';
             default: return key.replace(/([A-Z])/g, ' $1').trim();
         }
@@ -223,7 +224,7 @@ function ConfigurarNovoUsuario() {
             <div className="container mt-5 mb-5">
                 <div className="row justify-content-center">
                     <div className="col-md-10 col-lg-8">
-                        <h3 className="mb-4">Configurar Permissões para: <span className="text-primary">{usuario.nome || usuario.login}</span></h3>
+                        <h3 className="mb-4">Cadastrar Novo Usuário</h3>
                         
                         {mensagem && (
                             <div className={`alert ${mensagem.includes('sucesso') ? 'alert-success' : 'alert-danger'} fade show`} role="alert">
@@ -233,13 +234,11 @@ function ConfigurarNovoUsuario() {
 
                         {/* Seção ÚNICA de Dados e Permissões */}
                         <div className="card shadow-lg mb-4">
-                            <div className="card-header bg-dark text-white">
-                                Detalhes do Funcionário (Todos os Atributos Simples do Siplan)
-                            </div>
+                            
                             <div className="card-body">
                                 
                                 {/* Dados (Apenas leitura) */}
-                                <h5 className="border-bottom pb-2 mb-3 text-muted">Informações Básicas</h5>
+                                <h5 className="border-bottom pb-2 mb-3 text-muted">Informações do Funcionário</h5>
                                 {renderizarTodosOsDados()}
                                 
                                 {/* Permissões (Checkboxes Editáveis) */}
@@ -275,7 +274,7 @@ function ConfigurarNovoUsuario() {
                                     </button>
                                     <button 
                                         type="button" 
-                                        className="btn btn-success"
+                                        className="btn btn-primary"
                                         onClick={manipularSalvar}
                                         disabled={carregando}
                                     >
