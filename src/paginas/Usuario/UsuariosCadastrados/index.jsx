@@ -20,6 +20,8 @@ const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
+const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/obterUsuariosSiplanPorFiltro';
+const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
 
 function Usuario() {
   const [usuarios, definirUsuarios] = useState([]);
@@ -50,11 +52,90 @@ function Usuario() {
   const [elementosOrganizacionais, definirElementosOrganizacionais] = useState([]);
   const [alertaSucesso, setAlertaSucesso] = useState(false);
 
-
+  const [filtroTipo, setFiltroTipo] = useState('nome');
+  const [filtroNome, setFiltroNome] = useState('');
+  const [permissaoFiltro, setPermissaoFiltro] = useState('');
+  const permissoesValidas = [
+    'administrador',
+    'administradorRisco',
+    'atualizarLotAutomatica',
+    'pareto',
+    'developer'
+  ];
 
   useEffect(() => {
-    buscarUsuarios(definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API);
+    const buscarUsuariosFiltrados = async () => {
+      definirCarregando(true);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setMensagemErro('Token de autenticação não encontrado.');
+          definirUsuarios([]);
+          definirTotalPaginas(0);
+          definirTotalElementos(0);
+          definirCarregando(false);
+          return;
+        }
 
+        let response;
+        if (filtroTipo === 'nome') {
+          const filtro = filtroNome.trim();
+          const url = filtro ? `${URL_FILTRO_NOME}/${encodeURIComponent(filtro)}` : URL_API;
+          console.log('Requisição de filtro por nome:', url);
+          response = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            params: { page: paginaAtual, size: tamanhoPagina }
+          });
+          console.log('Resposta da API (nome):', response.data);
+          const usuariosData = Array.isArray(response.data.content)
+            ? response.data.content
+            : Array.isArray(response.data)
+            ? response.data
+            : [];
+          definirUsuarios(usuariosData);
+          definirTotalPaginas(response.data.totalPages || 0);
+          definirTotalElementos(response.data.totalElements || usuariosData.length);
+        } else {
+          const permissao = permissaoFiltro.trim().toLowerCase();
+          if (permissao && !permissoesValidas.includes(permissao)) {
+            setMensagemErro('Permissão inválida. Use: administrador, administradorRisco, atualizarLotAutomatica, pareto ou developer.');
+            definirUsuarios([]);
+            definirTotalPaginas(0);
+            definirTotalElementos(0);
+            definirCarregando(false);
+            return;
+          }
+          const params = new URLSearchParams();
+          if (permissao) {
+            params.append(permissao, 'true');
+          }
+          const url = `${URL_FILTRO_PERMISSAO}?${params.toString()}`;
+          console.log('Requisição de filtro por permissão:', url);
+          response = await axios.get(URL_FILTRO_PERMISSAO, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            params
+          });
+          console.log('Resposta da API (permissão):', response.data);
+          const usuariosData = Array.isArray(response.data) ? response.data : [];
+          definirUsuarios(usuariosData);
+          definirTotalPaginas(1);
+          definirTotalElementos(usuariosData.length);
+        }
+        setMensagemErro('');
+      } catch (erro) {
+        console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
+        setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
+        definirUsuarios([]);
+        definirTotalPaginas(0);
+        definirTotalElementos(0);
+      }
+      definirCarregando(false);
+    };
+
+    buscarUsuariosFiltrados();
+  }, [paginaAtual, tamanhoPagina, filtroTipo, filtroNome, permissaoFiltro]);
+
+  useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
       const token = localStorage.getItem('token');
       if (!token || !anoOrganograma) {
@@ -83,7 +164,7 @@ function Usuario() {
     if (anoOrganograma) {
       carregarOpcoesDiretoria();
     }
-  }, [paginaAtual, tamanhoPagina, anoOrganograma]);
+  }, [anoOrganograma]);
 
   useEffect(() => {
     const carregarIndicadoresLiberados = async () => {
@@ -269,7 +350,6 @@ function Usuario() {
     }
   };
 
-
   const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && permissoes) {
       await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes);
@@ -296,9 +376,7 @@ function Usuario() {
   };
 
   const handleExcluirUsuario = (idUsuario) => {
-    // 1. O COMPONENTE lida com a confirmação
     if (window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`)) {
-      // 2. Se confirmado, ele CHAMA o service
       manipularExcluir(
         definirUsuarios,
         definirPaginaAtual,
@@ -370,10 +448,16 @@ function Usuario() {
     }
   ];
 
+  const handleFiltroTipoChange = (tipo) => {
+    setFiltroTipo(tipo);
+    setFiltroNome('');
+    setPermissaoFiltro('');
+    definirPaginaAtual(0);
+  };
+
   const renderizarFormularioAdicionar = () => {
     return (
       <div className="card-body">
-
         {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
           <select className="form-select" value={anoOrganograma} onChange={(e) => setAnoOrganograma(e.target.value)} required>
@@ -446,7 +530,7 @@ function Usuario() {
 
   const renderizarUsuarios = () => {
     if (carregando) return <tr><td colSpan="4" className="text-center py-3">Carregando...</td></tr>;
-    if (usuarios.length === 0) return <tr><td colSpan="4" className="text-center py-3">Nenhum usuário encontrado.</td></tr>;
+    if (!Array.isArray(usuarios) || usuarios.length === 0) return <tr><td colSpan="4" className="text-center py-3">Nenhum usuário encontrado.</td></tr>;
 
     return usuarios.map(usuario => (
       <tr key={usuario.id} className="border-bottom">
@@ -463,7 +547,7 @@ function Usuario() {
               <span> Visualizar Pareto </span>
             </div>
             <div className="form-check mb-2">
-              {usuario.atualizacaoAutomatica ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
+              {usuario.atualizarLotAutomatica ? <FaCheck className="FaCheck text-success" /> : <FaTimes className="FaTimes text-danger" />}
               <span> Atualização Automática </span>
             </div>
             <div className="form-check">
@@ -534,6 +618,52 @@ function Usuario() {
         </div>
         <div className="card">
           <div className="card-body">
+            <div className="mb-3">
+              <label className="form-label font-weight-bold">Filtrar por:</label>
+              <div className="form-check form-check-inline">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={filtroTipo === 'nome'}
+                  onChange={() => handleFiltroTipoChange('nome')}
+                />
+                <label className="form-check-label">Nome</label>
+              </div>
+              <div className="form-check form-check-inline">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={filtroTipo === 'permissao'}
+                  onChange={() => handleFiltroTipoChange('permissao')}
+                />
+                <label className="form-check-label">Permissão</label>
+              </div>
+            </div>
+            {filtroTipo === 'nome' ? (
+              <div className="mb-3">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={filtroNome}
+                  onChange={(e) => setFiltroNome(e.target.value)}
+                  placeholder="Digite o nome, login ou e-mail"
+                />
+              </div>
+            ) : (
+              <div className="mb-3">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={permissaoFiltro}
+                  onChange={(e) => setPermissaoFiltro(e.target.value)}
+                  placeholder="Digite a permissão (ex.: administrador, pareto)"
+                />
+                <small className="form-text text-muted">
+                  Permissões válidas: administrador, administradorRisco, atualizarLotAutomatica, pareto, developer
+                </small>
+              </div>
+            )}
+            {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
             <table className="table table-striped">
               <thead>
                 <tr className="table-light">
@@ -545,16 +675,18 @@ function Usuario() {
               </thead>
               <tbody>{renderizarUsuarios()}</tbody>
             </table>
-            <Pagination
-              estilos="d-flex justify-content-between align-items-center mt-4"
-              pagina={paginaAtual}
-              definirPagina={definirPaginaAtual}
-              tamanho={tamanhoPagina}
-              definirTamanho={definirTamanhoPagina}
-              totalPaginas={totalPaginas}
-              totalElementos={totalElementos}
-              opcoesPagina={[10, 20, 40]}
-            />
+            {filtroTipo === 'nome' && (
+              <Pagination
+                estilos="d-flex justify-content-between align-items-center mt-4"
+                pagina={paginaAtual}
+                definirPagina={definirPaginaAtual}
+                tamanho={tamanhoPagina}
+                definirTamanho={definirTamanhoPagina}
+                totalPaginas={totalPaginas}
+                totalElementos={totalElementos}
+                opcoesPagina={[10, 20, 40]}
+              />
+            )}
           </div>
         </div>
         <Modal
@@ -623,8 +755,8 @@ function Usuario() {
                 <input
                   type="checkbox"
                   className="form-check-input"
-                  checked={usuarioEditando.atualizacaoAutomatica}
-                  onChange={(e) => atualizarPermissao('atualizacaoAutomatica', e.target.checked)}
+                  checked={usuarioEditando.atualizarLotAutomatica}
+                  onChange={(e) => atualizarPermissao('atualizarLotAutomatica', e.target.checked)}
                 />
                 <label className="form-check-label">Atualização Automática</label>
               </div>
@@ -648,7 +780,6 @@ function Usuario() {
             { label: 'Adicionar Elemento Organizacional', className: 'btn btn-primary', onClick: abrirModalAdicionarElemento },
             { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalElementos }
           ]}
-
         >
           <div className="card-body">
             <table className="table table-striped">

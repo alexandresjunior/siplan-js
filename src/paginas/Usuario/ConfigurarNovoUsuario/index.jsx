@@ -65,6 +65,7 @@ function ConfigurarNovoUsuario() {
             case 'cpf': return 'CPF';
             case 'lotacaoAtual': return 'Lotação Atual';
             case 'siglaLotacaoAtual': return 'Sigla Lotação Atual';
+            case 'tipoFuncionario': return 'Tipo Funcionário'
             case 'ativo': return 'Status';
             default: return key.replace(/([A-Z])/g, ' $1').trim();
         }
@@ -267,7 +268,7 @@ function ConfigurarNovoUsuario() {
                                     <button 
                                         type="button" 
                                         className="btn btn-outline-secondary me-3"
-                                        onClick={() => navigate('/cadastros/novousuario')}
+                                        onClick={() => navigate('/usuarios/novo')}
                                         disabled={carregando}
                                     >
                                         Voltar
