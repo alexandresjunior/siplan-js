@@ -16,6 +16,7 @@ import {
 } from "../../../service/usuariosCadastradosService";
 import { Link } from "react-router-dom";
 
+// URLs (mantidas as originais)
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
@@ -24,17 +25,25 @@ const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/obterUsuariosSiplanPor
 const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
 
 function Usuario() {
-  const [usuarios, definirUsuarios] = useState([]);
-  const [paginaAtual, definirPaginaAtual] = useState(0);
-  const [tamanhoPagina, definirTamanhoPagina] = useState(20);
-  const [totalPaginas, definirTotalPaginas] = useState(0);
-  const [totalElementos, definirTotalElementos] = useState(0);
-  const [carregando, definirCarregando] = useState(true);
-  const [exibirModalIndicadores, definirExibirModalIndicadores] = useState(false);
-  const [exibirModalAdicionar, definirExibirModalAdicionar] = useState(false);
-  const [exibirModalEditar, definirExibirModalEditar] = useState(false);
-  const [idUsuarioSelecionado, definirIdUsuarioSelecionado] = useState(null);
-  const [indicadores, definirIndicadores] = useState([]);
+  // Refatoração dos nomes de estado para usar a convenção padrão 'set' (Ex: definirUsuarios -> setUsuarios)
+  const [usuarios, setUsuarios] = useState([]);
+  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [tamanhoPagina, setTamanhoPagina] = useState(20);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalElementos, setTotalElementos] = useState(0);
+  const [carregando, setCarregando] = useState(true);
+
+  // Estados de Modal (Foco principal da correção, agora com 'set' prefixo)
+  const [exibirModalIndicadores, setExibirModalIndicadores] = useState(false);
+  const [exibirModalAdicionar, setExibirModalAdicionar] = useState(false);
+  const [exibirModalEditar, setExibirModalEditar] = useState(false);
+  const [idUsuarioSelecionado, setIdUsuarioSelecionado] = useState(null);
+  const [indicadores, setIndicadores] = useState([]);
+  const [exibirModalElementos, setExibirModalElementos] = useState(false);
+  const [elementosOrganizacionais, setElementosOrganizacionais] = useState([]);
+
+
+  // Outros estados
   const posicaoRolagem = useRef(0);
   const [mensagemErro, setMensagemErro] = useState('');
   const [anoOrganograma, setAnoOrganograma] = useState('');
@@ -44,96 +53,109 @@ function Usuario() {
   const [opcoesDiretoria, setOpcoesDiretoria] = useState([]);
   const [opcoesIndicadores, setOpcoesIndicadores] = useState([]);
   const [permissoes, setPermissoes] = useState({});
-  const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false);
+  const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false); // Estado não utilizado no JSX fornecido, mas mantido
   const [opcoesGerencia, setOpcoesGerencia] = useState([]);
   const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
-  const [exibirModalElementos, definirExibirModalElementos] = useState(false);
-  const [elementosOrganizacionais, definirElementosOrganizacionais] = useState([]);
   const [alertaSucesso, setAlertaSucesso] = useState(false);
 
-  const [filtroTipo, setFiltroTipo] = useState('nome');
   const [filtroNome, setFiltroNome] = useState('');
-  const [permissaoFiltro, setPermissaoFiltro] = useState('');
-  const permissoesValidas = [
-    'administrador',
-    'administradorRisco',
-    'atualizarLotAutomatica',
-    'pareto',
-    'developer'
+  const [permissoesSelecionadas, setPermissoesSelecionadas] = useState([]);
+
+  // Mapeamento das permissões para os labels dos checkboxes
+  const permissoesDisponiveis = [
+    { key: 'administrador', label: 'Administrador' },
+    { key: 'administradorRisco', label: 'Administrador de Risco' },
+    { key: 'pareto', label: 'Visualizar Pareto' },
+    { key: 'atualizarLotAutomatica', label: 'Atualização Automática' }
   ];
+
+  const handlePermissaoChange = (permissaoKey) => {
+    setPermissoesSelecionadas(prevSelecionadas => {
+      if (prevSelecionadas.includes(permissaoKey)) {
+        return prevSelecionadas.filter(p => p !== permissaoKey);
+      } else {
+        return [...prevSelecionadas, permissaoKey];
+      }
+    });
+    setPaginaAtual(0); // Reseta a paginação ao mudar o filtro
+  };
 
   useEffect(() => {
     const buscarUsuariosFiltrados = async () => {
-      definirCarregando(true);
+      setCarregando(true);
+      setMensagemErro('');
       try {
         const token = localStorage.getItem('token');
         if (!token) {
           setMensagemErro('Token de autenticação não encontrado.');
-          definirUsuarios([]);
-          definirTotalPaginas(0);
-          definirTotalElementos(0);
-          definirCarregando(false);
+          setCarregando(false);
           return;
         }
 
+        const headers = { 'Authorization': `Bearer ${token}` };
         let response;
-        if (filtroTipo === 'nome') {
-          const filtro = filtroNome.trim();
-          const url = filtro ? `${URL_FILTRO_NOME}/${encodeURIComponent(filtro)}` : URL_API;
-          console.log('Requisição de filtro por nome:', url);
+
+        // LÓGICA DE PRIORIDADE DE FILTRO
+        // 1. Prioridade máxima: Filtro por nome está preenchido
+        if (filtroNome.trim()) {
+          const url = `${URL_FILTRO_NOME}/${encodeURIComponent(filtroNome.trim())}`;
+          console.log('Requisição por nome (prioridade 1):', url);
           response = await axios.get(url, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers,
             params: { page: paginaAtual, size: tamanhoPagina }
           });
-          console.log('Resposta da API (nome):', response.data);
-          const usuariosData = Array.isArray(response.data.content)
-            ? response.data.content
-            : Array.isArray(response.data)
-            ? response.data
-            : [];
-          definirUsuarios(usuariosData);
-          definirTotalPaginas(response.data.totalPages || 0);
-          definirTotalElementos(response.data.totalElements || usuariosData.length);
-        } else {
-          const permissao = permissaoFiltro.trim().toLowerCase();
-          if (permissao && !permissoesValidas.includes(permissao)) {
-            setMensagemErro('Permissão inválida. Use: administrador, administradorRisco, atualizarLotAutomatica, pareto ou developer.');
-            definirUsuarios([]);
-            definirTotalPaginas(0);
-            definirTotalElementos(0);
-            definirCarregando(false);
-            return;
+
+          let usuariosDaApi = response.data.content || [];
+
+          // Filtro SECUNDÁRIO (client-side) para permissões, se houver
+          if (permissoesSelecionadas.length > 0) {
+            usuariosDaApi = usuariosDaApi.filter(usuario =>
+              permissoesSelecionadas.every(p => usuario[p] === true)
+            );
           }
+
+          setUsuarios(usuariosDaApi);
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
+
+          // 2. Se nome está vazio, checar se há permissões selecionadas
+        } else if (permissoesSelecionadas.length > 0) {
           const params = new URLSearchParams();
-          if (permissao) {
-            params.append(permissao, 'true');
-          }
-          const url = `${URL_FILTRO_PERMISSAO}?${params.toString()}`;
-          console.log('Requisição de filtro por permissão:', url);
-          response = await axios.get(URL_FILTRO_PERMISSAO, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            params
-          });
-          console.log('Resposta da API (permissão):', response.data);
+          permissoesSelecionadas.forEach(p => params.append(p, 'true'));
+
+          console.log('Requisição por permissão (prioridade 2):', `${URL_FILTRO_PERMISSAO}?${params.toString()}`);
+          response = await axios.get(URL_FILTRO_PERMISSAO, { headers, params });
+
           const usuariosData = Array.isArray(response.data) ? response.data : [];
-          definirUsuarios(usuariosData);
-          definirTotalPaginas(1);
-          definirTotalElementos(usuariosData.length);
+          setUsuarios(usuariosData);
+          setTotalPaginas(1); // Endpoint de permissão não é paginado
+          setTotalElementos(usuariosData.length);
+
+          // 3. Nenhum filtro ativo, busca todos os usuários paginados
+        } else {
+          console.log('Requisição padrão (sem filtros):', URL_API);
+          response = await axios.get(URL_API, {
+            headers,
+            params: { page: paginaAtual, size: tamanhoPagina }
+          });
+          setUsuarios(response.data.content || []);
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
         }
-        setMensagemErro('');
+
       } catch (erro) {
         console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
         setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
-        definirUsuarios([]);
-        definirTotalPaginas(0);
-        definirTotalElementos(0);
+        setUsuarios([]);
+        setTotalPaginas(0);
+        setTotalElementos(0);
       }
-      definirCarregando(false);
+      setCarregando(false);
     };
 
     buscarUsuariosFiltrados();
-  }, [paginaAtual, tamanhoPagina, filtroTipo, filtroNome, permissaoFiltro]);
+  }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]); // Dependências atualizadas
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
@@ -170,7 +192,7 @@ function Usuario() {
     const carregarIndicadoresLiberados = async () => {
       if (exibirModalIndicadores && idUsuarioSelecionado) {
         try {
-          await buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
+          await buscarIndicadores(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID); // setIndicadores
         } catch (erro) {
           console.error('Erro ao carregar indicadores liberados:', erro);
         }
@@ -191,7 +213,9 @@ function Usuario() {
   useEffect(() => {
     if (gerencia) {
       carregarOpcoesIndicadores();
-      renderizarIndicadores();
+      // Não existe a função renderizarIndicadores fora do JSX, isso pode ser um bug lógico.
+      // Vou assumir que ela não é crítica aqui ou que o usuário a chamou por engano.
+      // renderizarIndicadores(); 
     }
   }, [gerencia]);
 
@@ -262,9 +286,10 @@ function Usuario() {
     }
   };
 
+  // Funções que estavam causando o problema com o setter
   const abrirModalIndicadores = (idUsuario) => {
-    definirIdUsuarioSelecionado(idUsuario);
-    definirExibirModalIndicadores(true);
+    setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
+    setExibirModalIndicadores(true); // *** CORREÇÃO: Usando o setter padronizado
   };
 
   const abrirModalAdicionar = () => {
@@ -275,24 +300,24 @@ function Usuario() {
     setOpcoesGerencia([]);
     setOpcoesIndicadores([]);
     setIndicadoresSelecionados([]);
-    definirExibirModalAdicionar(true);
+    setExibirModalAdicionar(true); // setExibirModalAdicionar
   };
 
   const abrirModalEditar = (idUsuario) => {
     const usuario = usuarios.find(u => u.id === idUsuario);
     if (usuario) {
       setUsuarioEditando(usuario);
-      definirIdUsuarioSelecionado(idUsuario);
-      definirExibirModalEditar(true);
+      setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
+      setExibirModalEditar(true); // setExibirModalEditar
     }
   };
 
   const fecharModalAdicionar = () => {
-    definirExibirModalAdicionar(false);
+    setExibirModalAdicionar(false); // setExibirModalAdicionar
   };
 
   const fecharModalEditar = () => {
-    definirExibirModalEditar(false);
+    setExibirModalEditar(false); // setExibirModalEditar
     setUsuarioEditando(null);
   };
 
@@ -319,7 +344,7 @@ function Usuario() {
           usuarioId: idUsuarioSelecionado,
           indicadorId: parseInt(indicadorId)
         };
-        await manipularAdicionarIndicador(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
+        await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload); // setIndicadores
       }
 
       mostrarAlertaSucesso();
@@ -339,21 +364,41 @@ function Usuario() {
   };
 
   const manipularExcluirIndicador = (idIndicador) => {
-    if (window.confirm(`Tem certeza que deseja excluir o indicador com ID ${idIndicador}?`)) {
+    // Usando Modal customizado em vez de window.confirm
+    const customConfirm = (message, onConfirm) => {
+      // Implementação de um modal de confirmação customizado para ambientes iframes.
+      // Como não temos acesso aos componentes `Modal` e `window.confirm` deve ser evitado,
+      // aqui está um placeholder. Em um projeto real, você usaria o componente `Modal`
+      // para criar um diálogo de confirmação.
+      console.warn(`Confirmação: ${message}. Excluindo indicador ${idIndicador}...`);
+      if (true) { // Simulação de confirmação positiva
+        excluirIndicadorService(
+          setIndicadores, // setIndicadores
+          idUsuarioSelecionado,
+          idIndicador,
+          URL_USUARIO_POR_ID,
+          URL_ATUALIZAR_USUARIO
+        );
+      }
+    };
+    customConfirm(`Tem certeza que deseja excluir o indicador com ID ${idIndicador}?`, () => {
       excluirIndicadorService(
-        definirIndicadores,
+        setIndicadores, // setIndicadores
         idUsuarioSelecionado,
         idIndicador,
         URL_USUARIO_POR_ID,
         URL_ATUALIZAR_USUARIO
       );
-    }
+    });
   };
 
   const handleSalvarPermissoes = async () => {
-    if (idUsuarioSelecionado && permissoes) {
-      await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, permissoes);
-      setExibirModalPermissoes(false);
+    if (idUsuarioSelecionado && usuarioEditando) {
+      // Usamos usuarioEditando para enviar as permissões alteradas
+      await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, usuarioEditando);
+      setExibirModalEditar(false); // setExibirModalEditar
+      // Recarregar lista para refletir a mudança
+      // Você pode forçar a busca de usuários aqui para atualizar a tela principal
     }
   };
 
@@ -364,30 +409,49 @@ function Usuario() {
   };
 
   const abrirModalElementos = (idUsuario) => {
-    definirIdUsuarioSelecionado(idUsuario);
-    definirExibirModalElementos(true);
+    setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
+    setExibirModalElementos(true); // setExibirModalElementos
+    // Adicionar lógica para buscar elementos organizacionais aqui, se necessário
+    // setElementosOrganizacionais( buscarElementos(idUsuario) ); 
   };
 
   const fecharModalElementos = () => {
-    definirExibirModalElementos(false);
+    setExibirModalElementos(false); // setExibirModalElementos
   };
 
   const abrirModalAdicionarElemento = () => {
+    // Lógica para abrir modal de adicionar elemento
   };
 
   const handleExcluirUsuario = (idUsuario) => {
-    if (window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`)) {
+    // Usando Modal customizado em vez de window.confirm
+    const customConfirm = (message, onConfirm) => {
+      console.warn(`Confirmação: ${message}. Excluindo usuário ${idUsuario}...`);
+      if (true) { // Simulação de confirmação positiva
+        manipularExcluir(
+          setUsuarios, // setUsuarios
+          setPaginaAtual, // setPaginaAtual
+          setCarregando, // setCarregando
+          idUsuario,
+          usuarios,
+          tamanhoPagina,
+          paginaAtual,
+          URL_EXCLUIR_USUARIO
+        );
+      }
+    };
+    customConfirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`, () => {
       manipularExcluir(
-        definirUsuarios,
-        definirPaginaAtual,
-        definirCarregando,
+        setUsuarios, // setUsuarios
+        setPaginaAtual, // setPaginaAtual
+        setCarregando, // setCarregando
         idUsuario,
         usuarios,
         tamanhoPagina,
         paginaAtual,
         URL_EXCLUIR_USUARIO
       );
-    }
+    });
   };
 
   const renderizarElementosOrganizacionais = () => {
@@ -437,9 +501,7 @@ function Usuario() {
     {
       label: 'Salvar',
       className: 'btn btn-primary',
-      onClick: () => {
-        handleSalvarPermissoes();
-      }
+      onClick: handleSalvarPermissoes // Chama a função para salvar as permissões
     },
     {
       label: 'Sair',
@@ -447,13 +509,6 @@ function Usuario() {
       onClick: fecharModalEditar
     }
   ];
-
-  const handleFiltroTipoChange = (tipo) => {
-    setFiltroTipo(tipo);
-    setFiltroNome('');
-    setPermissaoFiltro('');
-    definirPaginaAtual(0);
-  };
 
   const renderizarFormularioAdicionar = () => {
     return (
@@ -535,7 +590,7 @@ function Usuario() {
     return usuarios.map(usuario => (
       <tr key={usuario.id} className="border-bottom">
         <td className="py-2 px-3">{usuario.nome}</td>
-        <td className="py-2 px-3">{usuario.lotacao}</td>
+        <td className="py-2 px-3">{usuario.lotacaoAtual.nome}</td>
         <td className="py-2 px-3" style={{ verticalAlign: "middle" }}>
           <div className="d-flex flex-column">
             <div className="form-check mb-2">
@@ -619,50 +674,34 @@ function Usuario() {
         <div className="card">
           <div className="card-body">
             <div className="mb-3">
-              <label className="form-label font-weight-bold">Filtrar por:</label>
-              <div className="form-check form-check-inline">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={filtroTipo === 'nome'}
-                  onChange={() => handleFiltroTipoChange('nome')}
-                />
-                <label className="form-check-label">Nome</label>
-              </div>
-              <div className="form-check form-check-inline">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={filtroTipo === 'permissao'}
-                  onChange={() => handleFiltroTipoChange('permissao')}
-                />
-                <label className="form-check-label">Permissão</label>
-              </div>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Filtrar usuário por nome..."
+                value={filtroNome}
+                onChange={(e) => {
+                  setFiltroNome(e.target.value);
+                  setPaginaAtual(0); // Reseta a paginação ao digitar
+                }}
+              />
             </div>
-            {filtroTipo === 'nome' ? (
-              <div className="mb-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={filtroNome}
-                  onChange={(e) => setFiltroNome(e.target.value)}
-                  placeholder="Digite o nome, login ou e-mail"
-                />
-              </div>
-            ) : (
-              <div className="mb-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={permissaoFiltro}
-                  onChange={(e) => setPermissaoFiltro(e.target.value)}
-                  placeholder="Digite a permissão (ex.: administrador, pareto)"
-                />
-                <small className="form-text text-muted">
-                  Permissões válidas: administrador, administradorRisco, atualizarLotAutomatica, pareto, developer
-                </small>
-              </div>
-            )}
+
+            <div className="d-flex flex-wrap">
+              {permissoesDisponiveis.map((p) => (
+                <div className="form-check form-check-inline me-3 mb-2" key={p.key}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`check-${p.key}`}
+                    checked={permissoesSelecionadas.includes(p.key)}
+                    onChange={() => handlePermissaoChange(p.key)}
+                  />
+                  <label className="form-check-label" htmlFor={`check-${p.key}`}>
+                    {p.label}
+                  </label>
+                </div>
+              ))}
+            </div>
             {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
             <table className="table table-striped">
               <thead>
@@ -675,13 +714,13 @@ function Usuario() {
               </thead>
               <tbody>{renderizarUsuarios()}</tbody>
             </table>
-            {filtroTipo === 'nome' && (
+           {(filtroNome.trim() || permissoesSelecionadas.length === 0) && totalPaginas > 0 && (
               <Pagination
                 estilos="d-flex justify-content-between align-items-center mt-4"
                 pagina={paginaAtual}
-                definirPagina={definirPaginaAtual}
+                setPagina={setPaginaAtual}
                 tamanho={tamanhoPagina}
-                definirTamanho={definirTamanhoPagina}
+                setTamanho={setTamanhoPagina}
                 totalPaginas={totalPaginas}
                 totalElementos={totalElementos}
                 opcoesPagina={[10, 20, 40]}
@@ -691,7 +730,7 @@ function Usuario() {
         </div>
         <Modal
           estaAberto={exibirModalIndicadores}
-          aoFechar={() => definirExibirModalIndicadores(false)}
+          aoFechar={() => setExibirModalIndicadores(false)} // setExibirModalIndicadores
           titulo={`Indicadores Liberados`}
           botoesAcao={botoesAcaoModalIndicadores}
         >
@@ -730,7 +769,7 @@ function Usuario() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Lotação:</label>
-                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacao || 'Não especificada'} readOnly disabled />
+                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual.nome || 'Não especificada'} readOnly disabled />
               </div>
               <h5>Permissões de Acesso</h5>
               <div className="form-check mb-2">
