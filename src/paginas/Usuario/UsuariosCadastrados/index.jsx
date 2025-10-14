@@ -590,7 +590,7 @@ function Usuario() {
     return usuarios.map(usuario => (
       <tr key={usuario.id} className="border-bottom">
         <td className="py-2 px-3">{usuario.nome}</td>
-        <td className="py-2 px-3">{usuario.lotacaoAtual.nome}</td>
+        <td className="py-2 px-3">{usuario.lotacaoAtual}</td>
         <td className="py-2 px-3" style={{ verticalAlign: "middle" }}>
           <div className="d-flex flex-column">
             <div className="form-check mb-2">
@@ -769,7 +769,7 @@ function Usuario() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Lotação:</label>
-                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual.nome || 'Não especificada'} readOnly disabled />
+                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual?.nome || 'Não especificada'} readOnly disabled />
               </div>
               <h5>Permissões de Acesso</h5>
               <div className="form-check mb-2">
