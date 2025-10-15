@@ -21,7 +21,7 @@ const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
-const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/obterUsuariosSiplanPorFiltro';
+const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/filtro/porNome';
 const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
 
 function Usuario() {
@@ -53,7 +53,6 @@ function Usuario() {
   const [opcoesDiretoria, setOpcoesDiretoria] = useState([]);
   const [opcoesIndicadores, setOpcoesIndicadores] = useState([]);
   const [permissoes, setPermissoes] = useState({});
-  const [exibirModalPermissoes, setExibirModalPermissoes] = useState(false); // Estado não utilizado no JSX fornecido, mas mantido
   const [opcoesGerencia, setOpcoesGerencia] = useState([]);
   const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
@@ -96,41 +95,32 @@ function Usuario() {
         const headers = { 'Authorization': `Bearer ${token}` };
         let response;
 
-        // LÓGICA DE PRIORIDADE DE FILTRO
-        // 1. Prioridade máxima: Filtro por nome está preenchido
+        // 1. Filtro por nome tem prioridade se preenchido
         if (filtroNome.trim()) {
-          const url = `${URL_FILTRO_NOME}/${encodeURIComponent(filtroNome.trim())}`;
-          console.log('Requisição por nome (prioridade 1):', url);
+          const url = URL_FILTRO_NOME;
+          console.log('Requisição por nome:', url);
           response = await axios.get(url, {
             headers,
-            params: { page: paginaAtual, size: tamanhoPagina }
+            params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
           });
-
-          let usuariosDaApi = response.data.content || [];
-
-          // Filtro SECUNDÁRIO (client-side) para permissões, se houver
-          if (permissoesSelecionadas.length > 0) {
-            usuariosDaApi = usuariosDaApi.filter(usuario =>
-              permissoesSelecionadas.every(p => usuario[p] === true)
-            );
-          }
-
-          setUsuarios(usuariosDaApi);
+          setUsuarios(response.data.content || []);
           setTotalPaginas(response.data.totalPages || 0);
           setTotalElementos(response.data.totalElements || 0);
 
-          // 2. Se nome está vazio, checar se há permissões selecionadas
+          // 2. Filtro por permissões se nome estiver vazio e houver permissões selecionadas
         } else if (permissoesSelecionadas.length > 0) {
-          const params = new URLSearchParams();
-          permissoesSelecionadas.forEach(p => params.append(p, 'true'));
-
-          console.log('Requisição por permissão (prioridade 2):', `${URL_FILTRO_PERMISSAO}?${params.toString()}`);
-          response = await axios.get(URL_FILTRO_PERMISSAO, { headers, params });
-
-          const usuariosData = Array.isArray(response.data) ? response.data : [];
-          setUsuarios(usuariosData);
-          setTotalPaginas(1); // Endpoint de permissão não é paginado
-          setTotalElementos(usuariosData.length);
+          const params = {};
+          permissoesSelecionadas.forEach(p => {
+            params[p] = true;
+          });
+          console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
+          response = await axios.get(URL_FILTRO_PERMISSAO, {
+            headers,
+            params: { ...params, page: paginaAtual, size: tamanhoPagina }
+          });
+          setUsuarios(response.data.content || []);
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
 
           // 3. Nenhum filtro ativo, busca todos os usuários paginados
         } else {
@@ -143,7 +133,6 @@ function Usuario() {
           setTotalPaginas(response.data.totalPages || 0);
           setTotalElementos(response.data.totalElements || 0);
         }
-
       } catch (erro) {
         console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
         setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
@@ -155,7 +144,7 @@ function Usuario() {
     };
 
     buscarUsuariosFiltrados();
-  }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]); // Dependências atualizadas
+  }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]);
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
@@ -714,7 +703,7 @@ function Usuario() {
               </thead>
               <tbody>{renderizarUsuarios()}</tbody>
             </table>
-           {(filtroNome.trim() || permissoesSelecionadas.length === 0) && totalPaginas > 0 && (
+            {(filtroNome.trim() || permissoesSelecionadas.length > 0 || totalPaginas > 0) && (
               <Pagination
                 estilos="d-flex justify-content-between align-items-center mt-4"
                 pagina={paginaAtual}
