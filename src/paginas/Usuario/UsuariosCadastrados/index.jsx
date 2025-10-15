@@ -80,71 +80,81 @@ function Usuario() {
     setPaginaAtual(0); // Reseta a paginação ao mudar o filtro
   };
 
-  useEffect(() => {
-    const buscarUsuariosFiltrados = async () => {
-      setCarregando(true);
-      setMensagemErro('');
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setMensagemErro('Token de autenticação não encontrado.');
-          setCarregando(false);
-          return;
-        }
-
-        const headers = { 'Authorization': `Bearer ${token}` };
-        let response;
-
-        // 1. Filtro por nome tem prioridade se preenchido
-        if (filtroNome.trim()) {
-          const url = URL_FILTRO_NOME;
-          console.log('Requisição por nome:', url);
-          response = await axios.get(url, {
-            headers,
-            params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
-          });
-          setUsuarios(response.data.content || []);
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
-
-          // 2. Filtro por permissões se nome estiver vazio e houver permissões selecionadas
-        } else if (permissoesSelecionadas.length > 0) {
-          const params = {};
-          permissoesSelecionadas.forEach(p => {
-            params[p] = true;
-          });
-          console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
-          response = await axios.get(URL_FILTRO_PERMISSAO, {
-            headers,
-            params: { ...params, page: paginaAtual, size: tamanhoPagina }
-          });
-          setUsuarios(response.data.content || []);
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
-
-          // 3. Nenhum filtro ativo, busca todos os usuários paginados
-        } else {
-          console.log('Requisição padrão (sem filtros):', URL_API);
-          response = await axios.get(URL_API, {
-            headers,
-            params: { page: paginaAtual, size: tamanhoPagina }
-          });
-          setUsuarios(response.data.content || []);
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
-        }
-      } catch (erro) {
-        console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
-        setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
-        setUsuarios([]);
-        setTotalPaginas(0);
-        setTotalElementos(0);
+ useEffect(() => {
+  const buscarUsuariosFiltrados = async () => {
+    setCarregando(true);
+    setMensagemErro('');
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMensagemErro('Token de autenticação não encontrado.');
+        setCarregando(false);
+        return;
       }
-      setCarregando(false);
-    };
 
-    buscarUsuariosFiltrados();
-  }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]);
+      const headers = { 'Authorization': `Bearer ${token}` };
+      let response;
+
+      // 1. Filtro por nome (se preenchido) como prioridade inicial
+      if (filtroNome.trim()) {
+        const url = URL_FILTRO_NOME;
+        console.log('Requisição por nome:', url);
+        response = await axios.get(url, {
+          headers,
+          params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
+        });
+        let usuariosDaApi = response.data.content || [];
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
+
+        // 2. Aplicar filtro secundário por permissões no cliente, se houver
+        if (permissoesSelecionadas.length > 0) {
+          usuariosDaApi = usuariosDaApi.filter(usuario =>
+            permissoesSelecionadas.every(p => usuario[p] === true)
+          );
+          setTotalPaginas(1); // Ajuste manual para refletir a nova contagem
+          setTotalElementos(usuariosDaApi.length);
+        }
+        setUsuarios(usuariosDaApi);
+
+        // 3. Apenas filtro por permissões, se nome estiver vazio e houver permissões
+      } else if (permissoesSelecionadas.length > 0) {
+        const params = {};
+        permissoesSelecionadas.forEach(p => {
+          params[p] = true;
+        });
+        console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
+        response = await axios.get(URL_FILTRO_PERMISSAO, {
+          headers,
+          params: { ...params, page: paginaAtual, size: tamanhoPagina }
+        });
+        setUsuarios(response.data.content || []);
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
+
+        // 4. Nenhum filtro ativo, busca todos os usuários paginados
+      } else {
+        console.log('Requisição padrão (sem filtros):', URL_API);
+        response = await axios.get(URL_API, {
+          headers,
+          params: { page: paginaAtual, size: tamanhoPagina }
+        });
+        setUsuarios(response.data.content || []);
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
+      }
+    } catch (erro) {
+      console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
+      setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
+      setUsuarios([]);
+      setTotalPaginas(0);
+      setTotalElementos(0);
+    }
+    setCarregando(false);
+  };
+
+  buscarUsuariosFiltrados();
+}, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]);
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
