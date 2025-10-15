@@ -62,9 +62,11 @@ function ConfigurarNovoUsuario() {
     // Função auxiliar para obter o rótulo formatado
     const getLabel = (key) => {
         switch (key) {
+            case 'id' : return 'ID';
             case 'cpf': return 'CPF';
             case 'lotacaoAtual': return 'Lotação Atual';
             case 'siglaLotacaoAtual': return 'Sigla Lotação Atual';
+            case 'matricula' : return 'Matrícula';
             case 'tipoFuncionario': return 'Tipo Funcionário'
             case 'ativo': return 'Status';
             default: return key.replace(/([A-Z])/g, ' $1').trim();
