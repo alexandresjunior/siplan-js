@@ -5,7 +5,7 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
     const [anos, setAnos] = useState([]);
     const [diretorias, setDiretorias] = useState([]);
     const [unidades, setUnidades] = useState([]);
-
+    
     const [anoSelecionado, setAnoSelecionado] = useState('');
     const [diretoriaSelecionada, setDiretoriaSelecionada] = useState('');
     const [unidadeSelecionada, setUnidadeSelecionada] = useState('');
@@ -21,15 +21,11 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
     }, []);
 
 
-    // Carrega as diretorias quando o ano muda
-    useEffect(() => {
-        // Reseta todos os filtros filhos e a busca no pai
+    useEffect(() => {        
         setDiretorias([]);
         setUnidades([]);
         setDiretoriaSelecionada('');
         setUnidadeSelecionada('');
-        // A linha abaixo foi removida da versão anterior, mas vamos mantê-la
-        // para garantir que a busca seja limpa ao trocar o ano.
         onUnidadeChange(null);
 
         if (anoSelecionado) {
@@ -39,16 +35,12 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
                 .catch(err => console.error(err))
                 .finally(() => setCarregandoFiltros(false));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [anoSelecionado]);
 
-
-    // Carrega as unidades (gerências) quando a diretoria muda
     useEffect(() => {
         setUnidades([]);
         setUnidadeSelecionada('');
-        // A linha que chamava onUnidadeChange(null) foi REMOVIDA daqui,
-        // pois agora queremos que a seleção da diretoria inicie uma busca.
 
         if (diretoriaSelecionada && anoSelecionado) {
             setCarregandoFiltros(true);
@@ -57,26 +49,18 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
                 .catch(err => console.error(err))
                 .finally(() => setCarregandoFiltros(false));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [diretoriaSelecionada]);
 
-    // *** NOVA LÓGICA CENTRALIZADA PARA DISPARAR A BUSCA ***
-    // Este useEffect decide qual ID enviar para o componente pai.
     useEffect(() => {
-        // Prioridade 1: Se uma unidade específica (gerência) for selecionada, use o ID dela.
         if (unidadeSelecionada) {
             onUnidadeChange(unidadeSelecionada);
-        } 
-        // Prioridade 2: Senão, se uma diretoria for selecionada, use o ID da diretoria.
-        else if (diretoriaSelecionada) {
+        } else if (diretoriaSelecionada) {
             onUnidadeChange(diretoriaSelecionada);
-        }
-        // Se nenhum dos dois estiver selecionado (ex: ao trocar o ano), a busca é limpa.
-        else {
+        } else {
             onUnidadeChange(null);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [unidadeSelecionada, diretoriaSelecionada]); // Reage a mudanças em ambos os selects
+    }, [unidadeSelecionada, diretoriaSelecionada]);
 
 
     return (
@@ -100,7 +84,7 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
                     <div className="col-md-5">
                         <label htmlFor="unidade" className="form-label">Refinar por Gerência/Coordenação</label>
                         <select id="unidade" className="form-select" value={unidadeSelecionada} onChange={e => setUnidadeSelecionada(e.target.value)} disabled={!diretoriaSelecionada}>
-                            {/* Adicionamos uma opção "Todos" para permitir voltar à visão da diretoria */}
+                            
                             <option value="">Todos da Diretoria</option>
                             {unidades.map(un => <option key={un.id} value={un.id}>{un.nome}</option>)}
                         </select>

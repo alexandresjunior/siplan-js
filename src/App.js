@@ -9,6 +9,7 @@ import NovoUsuario from "./paginas/Usuario/NovoUsuario";
 import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
 import Objetivos from "./paginas/Cadastros/Objetivos";
 import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
+import CalendarioReunioes from "./paginas/Aderencia/CalendarioReunioes";
 
 function App() {
   return (
@@ -166,7 +167,7 @@ function App() {
           path="/aderencia/calendario-reunioes"
           element={
             <ProtectedRoute>
-              <></>
+              <CalendarioReunioes/>
             </ProtectedRoute>
           }
         />

@@ -59,3 +59,10 @@ export const excluirIndicadorPermanentemente = async (idIndicador) => {
     }
 
 };
+
+export const buscarCiclos = async () => {
+    const headers = getAuthHeaders();
+    const resposta = await fetch(`http://localhost:8098/indicador/ciclos`, { headers });
+    if (!resposta.ok) throw new Error('Falha ao buscar ciclos.');
+    return await resposta.json();
+};
