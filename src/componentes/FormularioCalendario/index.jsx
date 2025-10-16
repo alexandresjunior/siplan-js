@@ -1,5 +1,3 @@
-// /componentes/FormularioCalendario/index.jsx
-
 import React, { useState, useEffect } from 'react';
 import DatePicker from "react-datepicker";
 import { buscarDiretoriasPorAno } from '../../service/elementoOrganizacionalService';
@@ -7,7 +5,6 @@ import { buscarDiretoriasPorAno } from '../../service/elementoOrganizacionalServ
 const FormularioCalendario = ({ registro, onFormChange, anos, ciclos }) => {
     const [diretorias, setDiretorias] = useState([]);
 
-    // Efeito para carregar as diretorias quando o ano do registro em edição muda
     useEffect(() => {
         if (registro?.ano) {
             buscarDiretoriasPorAno(registro.ano)
@@ -40,9 +37,7 @@ const FormularioCalendario = ({ registro, onFormChange, anos, ciclos }) => {
                 </select>
             </div>
 
-            {/* --- INÍCIO DA ALTERAÇÃO DE LAYOUT --- */}
-
-            <div className="col-md-3"> {/* Alterado de col-md-6 para col-md-3 */}
+            <div className="col-md-3">
                 <label htmlFor="dataPrevista" className="form-label">Data Prevista</label>
                 <DatePicker 
                     id="dataPrevista" 
@@ -53,11 +48,11 @@ const FormularioCalendario = ({ registro, onFormChange, anos, ciclos }) => {
                     locale="pt-BR" 
                 />
             </div>
-            <div className="col-md-3"> {/* Alterado de col-md-6 para col-md-3 */}
+            <div className="col-md-3">
                 <label htmlFor="horaPrevista" className="form-label">Hora Prevista</label>
                 <input id="horaPrevista" type="time" className="form-control" value={registro?.horaPrevista || ''} onChange={(e) => onFormChange('horaPrevista', e.target.value)} />
             </div>
-            <div className="col-md-3"> {/* Alterado de col-md-6 para col-md-3 */}
+            <div className="col-md-3">
                 <label htmlFor="dataRealizada" className="form-label">Data Realizada</label>
                 <DatePicker 
                     id="dataRealizada" 
@@ -68,12 +63,10 @@ const FormularioCalendario = ({ registro, onFormChange, anos, ciclos }) => {
                     locale="pt-BR" 
                 />
             </div>
-            <div className="col-md-3"> {/* Alterado de col-md-6 para col-md-3 */}
+            <div className="col-md-3">
                 <label htmlFor="horaRealizada" className="form-label">Hora Realizada</label>
                 <input id="horaRealizada" type="time" className="form-control" value={registro?.horaRealizada || ''} onChange={(e) => onFormChange('horaRealizada', e.target.value)} />
             </div>
-
-            {/* --- FIM DA ALTERAÇÃO DE LAYOUT --- */}
         </div>
     );
 };

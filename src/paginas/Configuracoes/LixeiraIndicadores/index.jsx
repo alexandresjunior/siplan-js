@@ -29,13 +29,13 @@ function LixeiraIndicadores() {
     useEffect(() => {
         if (unidadeSelecionadaId) {
             carregarIndicadores();
-        }else {
+        } else {
             setIndicadores([]);
         }
-        
+
     }, [unidadeSelecionadaId, paginaAtual, tamanhoPagina]);
 
-    
+
     const handleUnidadeChange = (idUnidade) => {
         setUnidadeSelecionadaId(idUnidade);
         setPaginaAtual(0);
@@ -108,9 +108,10 @@ function LixeiraIndicadores() {
     };
 
     return (
-        <>
+        <div className='d-flex flex-column min-vh-100'>
             <Cabecalho />
-            <div className="container mt-5 mb-3">
+            <main className='flex-grow-1'>
+            <div className="container mt-5 mb-5">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h3>Lixeira de Indicadores</h3>
                     {!mostrarFiltros && (
@@ -184,6 +185,7 @@ function LixeiraIndicadores() {
                     </div>
                 </div>
             </div>
+            </main>
             <Rodape />
 
             <Modal
@@ -204,7 +206,7 @@ function LixeiraIndicadores() {
                 <p>Você tem certeza que deseja remover permanentemente o indicador: <strong>{indicadorSelecionado?.nomeIndicador}</strong>?</p>
                 <p className="fw-bold text-danger">Esta ação não pode ser desfeita.</p>
             </Modal>
-        </>
+        </div>
     );
 }
 
