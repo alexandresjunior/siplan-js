@@ -15,6 +15,8 @@ import {
   manipularExcluirIndicador as excluirIndicadorService
 } from "../../../service/usuariosCadastradosService";
 import { Link } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
+
 
 // URLs (mantidas as originais)
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
@@ -60,6 +62,9 @@ function Usuario() {
 
   const [filtroNome, setFiltroNome] = useState('');
   const [permissoesSelecionadas, setPermissoesSelecionadas] = useState([]);
+
+  const location = useLocation(); // ← ADICIONE ISSO
+
 
   // Mapeamento das permissões para os labels dos checkboxes
   const permissoesDisponiveis = [
@@ -154,7 +159,7 @@ function Usuario() {
   };
 
   buscarUsuariosFiltrados();
-}, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas]);
+}, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas, location.search]);
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {

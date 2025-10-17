@@ -129,67 +129,81 @@ function ConfigurarNovoUsuario() {
         }
     };
 
-    const manipularSalvar = async () => {
-        setCarregando(true);
-        setMensagem('');
+   const manipularSalvar = async () => {
+    setCarregando(true);
+    setMensagem('');
 
-        try {
-            // ✅ CORREÇÃO DEFINITIVA: Criar o DTO manualmente, incluindo APENAS os campos que existem no UsuarioSiplanDTO.java
+    try {
+        const usuarioDTO = {
+            id: usuario.id,
+            nome: usuario.nome,
+            login: usuario.login,
+            lotacaoAtual: usuario.lotacaoAtual,
+            administrador,
+            administradorRisco,
+            atualizarLotAutomatica,
+            pareto,
+        };
 
-            const usuarioDTO = {
-                // CAMPOS DO USUARIOSIPLANDTO.JAVA
-                id: usuario.id,
-                nome: usuario.nome,
-                login: usuario.login,
-                lotacaoAtual: usuario.lotacaoAtual,
+        delete usuarioDTO.usuarioComum;
+        console.log("DEBUG: DTO Final:", usuarioDTO);
 
-                // PERMISSÕES (DE ESTADOS SEPARADOS)
-                administrador,
-                administradorRisco,
-                atualizarLotAutomatica,
-                pareto,
+        const token = localStorage.getItem('token');
+        const resposta = await axios.post(`http://localhost:8098/usuariosip/atualizarUsuarioV2`, usuarioDTO, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
 
-                // Os campos booleanos do Java DTO são "Boolean" (nullable),
-                // mas estamos enviando true/false, o que está correto.
-            };
+        const usuarioAtualizado = resposta.data;
+        setMensagem(`✅ ${usuarioAtualizado.login} salvo com sucesso!`);
+        setUsuario(usuarioAtualizado);
 
-            // Remove campo de controle interno se existir (necessário antes, mas agora mais seguro)
-            delete usuarioDTO.usuarioComum;
+        // 🎯 CHAMA A LISTA E ADICIONA O USUÁRIO LOCALMENTE!
+        await buscarListaEAdicionar(usuarioAtualizado);
 
-            // --- LOG DE DEBUG ADICIONADO ---
-            console.log("DEBUG: DTO Final enviado para o backend (LIMPO):", usuarioDTO);
-            // --- FIM LOG DE DEBUG ---
+    } catch (erro) {
+        setMensagem(`❌ Falha: ${erro.response?.data?.message || erro.message}`);
+    } finally {
+        setCarregando(false);
+    }
+};
 
-            // ✅ NOVO ENDPOINT
-            const token = localStorage.getItem('token');
-            const atualizarUsuarioURL = `http://localhost:8098/usuariosip/atualizarUsuarioV2`;
-            const resposta = await axios.post(atualizarUsuarioURL, usuarioDTO, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-            });
+// 🆕 NOVA FUNÇÃO - BUSCA SEM FILTRO + ADICIONA
+const buscarListaEAdicionar = async (novoUsuario) => {
+    try {
+        const token = localStorage.getItem('token');
+        
+        // ✅ GET SEM FILTRO - Busca TODOS os usuários (mesmo sem permissão)
+        const resposta = await axios.get(`http://localhost:8098/usuariosip/usuarioscadastrados`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            params: { 
+                page: 0, 
+                size: 100, // ← MAIS USUÁRIOS
+                administrador: null,  // ← SEM FILTRO
+                administradorRisco: null,
+                pareto: null,
+                atualizarLotAutomatica: null
+            }
+        });
 
-            // ✅ RETORNO DIRETO
-            const usuarioAtualizado = resposta.data;
-            setMensagem(`Usuário ${usuarioAtualizado.login || usuarioAtualizado.nome} atualizado com sucesso!`);
-
-            // Atualiza o estado local com o objeto retornado (melhor prática)
-            setUsuario(usuarioAtualizado);
-
-        } catch (erro) {
-            console.error('Erro ao salvar as configurações:', erro);
-
-            const mensagemErro = erro.response?.data?.message
-                || erro.response?.statusText
-                || erro.message
-                || 'Erro desconhecido ao salvar. Verifique o console.';
-
-            setMensagem(`Falha ao salvar as configurações: ${mensagemErro}`);
-        } finally {
-            setCarregando(false);
-        }
-    };
+        // ✅ ADICIONA O NOVO NO TOPO (evita duplicatas)
+        const usuariosExistentes = resposta.data.content || [];
+        const usuariosAtualizados = [novoUsuario, ...usuariosExistentes.filter(u => u.id !== novoUsuario.id)];
+        
+        localStorage.setItem('usuariosAtualizados', JSON.stringify(usuariosAtualizados));
+        
+        setTimeout(() => {
+            navigate('/cadastros/usuarioscadastrados');
+        }, 1500);
+        
+    } catch (erro) {
+        console.error('Erro ao buscar lista:', erro);
+        // ✅ FALLBACK: Só o usuário novo
+        localStorage.setItem('usuariosAtualizados', JSON.stringify([novoUsuario]));
+        setTimeout(() => {
+            navigate('/cadastros/usuarioscadastrados');
+        }, 1500);
+    }
+};
 
     // Função para renderizar todos os dados do objeto de usuário (APLICANDO O FILTRO)
     const renderizarTodosOsDados = () => {
@@ -266,7 +280,7 @@ function ConfigurarNovoUsuario() {
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary me-3"
-                                        onClick={() => navigate('/usuarios/novo')}
+                                        onClick={() => navigate('/cadastros/usuarioscadastrados')}
                                         disabled={carregando}
                                     >
                                         Voltar
