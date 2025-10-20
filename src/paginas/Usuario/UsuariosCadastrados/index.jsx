@@ -25,6 +25,7 @@ const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
 const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/filtro/porNome';
 const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
+const URL_ATUALIZAR_USUARIO_V2 = 'http://localhost:8098/usuariosip/atualizarUsuarioV2'; // ✅ NOVO
 
 function Usuario() {
   // Refatoração dos nomes de estado para usar a convenção padrão 'set' (Ex: definirUsuarios -> setUsuarios)
@@ -92,81 +93,73 @@ function Usuario() {
     setPaginaAtual(0); // Reseta a paginação ao mudar o filtro
   };
 
-  useEffect(() => {
-    const buscarUsuariosFiltrados = async () => {
-      setCarregando(true);
-      setMensagemErro('');
-      try {
+  const buscarUsuariosFiltrados = async () => {
+    setCarregando(true);
+    setMensagemErro('');
+    try {
         const token = localStorage.getItem('token');
         if (!token) {
-          setMensagemErro('Token de autenticação não encontrado.');
-          setCarregando(false);
-          return;
+            setMensagemErro('Token de autenticação não encontrado.');
+            setCarregando(false);
+            return;
         }
 
         const headers = { 'Authorization': `Bearer ${token}` };
         let response;
 
-        // 1. Filtro por nome (se preenchido) como prioridade inicial
         if (filtroNome.trim()) {
-          const url = URL_FILTRO_NOME;
-          console.log('Requisição por nome:', url);
-          response = await axios.get(url, {
-            headers,
-            params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
-          });
-          let usuariosDaApi = response.data.content || [];
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
+            const url = URL_FILTRO_NOME;
+            response = await axios.get(url, {
+                headers,
+                params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
+            });
+            let usuariosDaApi = response.data.content || [];
+            setTotalPaginas(response.data.totalPages || 0);
+            setTotalElementos(response.data.totalElements || 0);
 
-          // 2. Aplicar filtro secundário por permissões no cliente, se houver
-          if (permissoesSelecionadas.length > 0) {
-            usuariosDaApi = usuariosDaApi.filter(usuario =>
-              permissoesSelecionadas.every(p => usuario[p] === true)
-            );
-            setTotalPaginas(1); // Ajuste manual para refletir a nova contagem
-            setTotalElementos(usuariosDaApi.length);
-          }
-          setUsuarios(usuariosDaApi);
+            if (permissoesSelecionadas.length > 0) {
+                usuariosDaApi = usuariosDaApi.filter(usuario =>
+                    permissoesSelecionadas.every(p => usuario[p] === true)
+                );
+                setTotalPaginas(1);
+                setTotalElementos(usuariosDaApi.length);
+            }
+            setUsuarios(usuariosDaApi);
 
-          // 3. Apenas filtro por permissões, se nome estiver vazio e houver permissões
         } else if (permissoesSelecionadas.length > 0) {
-          const params = {};
-          permissoesSelecionadas.forEach(p => {
-            params[p] = true;
-          });
-          console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
-          response = await axios.get(URL_FILTRO_PERMISSAO, {
-            headers,
-            params: { ...params, page: paginaAtual, size: tamanhoPagina }
-          });
-          setUsuarios(response.data.content || []);
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
+            const params = {};
+            permissoesSelecionadas.forEach(p => params[p] = true);
+            response = await axios.get(URL_FILTRO_PERMISSAO, {
+                headers,
+                params: { ...params, page: paginaAtual, size: tamanhoPagina }
+            });
+            setUsuarios(response.data.content || []);
+            setTotalPaginas(response.data.totalPages || 0);
+            setTotalElementos(response.data.totalElements || 0);
 
-          // 4. Nenhum filtro ativo, busca todos os usuários paginados
         } else {
-          console.log('Requisição padrão (sem filtros):', URL_API);
-          response = await axios.get(URL_API, {
-            headers,
-            params: { page: paginaAtual, size: tamanhoPagina }
-          });
-          setUsuarios(response.data.content || []);
-          setTotalPaginas(response.data.totalPages || 0);
-          setTotalElementos(response.data.totalElements || 0);
+            response = await axios.get(URL_API, {
+                headers,
+                params: { page: paginaAtual, size: tamanhoPagina }
+            });
+            setUsuarios(response.data.content || []);
+            setTotalPaginas(response.data.totalPages || 0);
+            setTotalElementos(response.data.totalElements || 0);
         }
-      } catch (erro) {
+    } catch (erro) {
         console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
         setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
         setUsuarios([]);
         setTotalPaginas(0);
         setTotalElementos(0);
-      }
-      setCarregando(false);
-    };
+    }
+    setCarregando(false);
+};
 
+  useEffect(() => {
     buscarUsuariosFiltrados();
   }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas, location.search]);
+
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
@@ -403,15 +396,42 @@ function Usuario() {
     });
   };
 
-  const handleSalvarPermissoes = async () => {
+ const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && usuarioEditando) {
-      // Usamos usuarioEditando para enviar as permissões alteradas
-      await manipularAlterarPermissao(setPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, usuarioEditando);
-      setExibirModalEditar(false); // setExibirModalEditar
-      // Recarregar lista para refletir a mudança
-      // Você pode forçar a busca de usuários aqui para atualizar a tela principal
+        setCarregando(true);
+        try {
+            const token = localStorage.getItem('token');
+            const payload = {
+                id: usuarioEditando.id,
+                login: usuarioEditando.login,
+                nome: usuarioEditando.nome,
+                lotacaoAtual: usuarioEditando.lotacaoAtual,
+                administrador: usuarioEditando.administrador,
+                pareto: usuarioEditando.pareto,
+                atualizarLotAutomatica: usuarioEditando.atualizarLotAutomatica,
+                administradorRisco: usuarioEditando.administradorRisco
+            };
+
+            await axios.post(URL_ATUALIZAR_USUARIO_V2, payload, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`, 
+                    'Content-Type': 'application/json' 
+                }
+            });
+
+            setExibirModalEditar(false);
+            mostrarAlertaSucesso();
+            
+            // ✅ ISSO AQUI! ATUALIZA A LISTA IMEDIATAMENTE
+            buscarUsuariosFiltrados();
+            
+        } catch (erro) {
+            setMensagemErro(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`);
+        } finally {
+            setCarregando(false);
+        }
     }
-  };
+};
 
   const atualizarPermissao = (permissao, valor) => {
     if (usuarioEditando) {
@@ -659,7 +679,7 @@ function Usuario() {
               maxWidth: '500px'
             }}
           >
-            Indicadores salvos com sucesso!
+            Salvo com sucesso!
           </div>
         )}
         {alertaSucessoExclusao && (
