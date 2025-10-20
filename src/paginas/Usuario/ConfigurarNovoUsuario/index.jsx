@@ -134,6 +134,32 @@ function ConfigurarNovoUsuario() {
     setMensagem('');
 
     try {
+        // ✅ DEBUG: TESTA SE USUÁRIO JÁ EXISTE!
+        if (!usuario.id) {
+            console.log("🔍 TESTANDO LOGIN:", usuario.login);
+            const token = localStorage.getItem('token');
+            
+            const response = await axios.get(`http://localhost:8098/usuariosip/obterporlogin/${usuario.login}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).catch(erro => {
+                console.log("🔍 ERRO DO ENDPOINT:", erro.response?.status);
+                return { erro: erro.response?.status };
+            });
+
+            // ✅ DEBUG NO CONSOLE
+            console.log("🔍 RESPOSTA:", response);
+
+            if (!response.erro) {
+                // 200 OK = JÁ EXISTE!
+                console.log("❌ USUÁRIO JÁ EXISTE!");
+                setMensagem(`⚠️ Este usuário '${usuario.login}' já é cadastrado no Siplan!`);
+                setCarregando(false);
+                return;
+            } else if (response.erro !== 404) {
+                throw new Error("Erro no servidor");
+            }
+        }
+
         const usuarioDTO = {
             id: usuario.id,
             nome: usuario.nome,

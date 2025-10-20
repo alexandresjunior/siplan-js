@@ -775,7 +775,7 @@ return (
             </div>
             <div className="mb-3">
               <label className="form-label">Lotação:</label>
-              <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual?.nome || 'Não especificada'} readOnly disabled />
+              <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual|| 'Não especificada'} readOnly disabled />
             </div>
             <h5>Permissões de Acesso</h5>
             <div className="form-check mb-2">

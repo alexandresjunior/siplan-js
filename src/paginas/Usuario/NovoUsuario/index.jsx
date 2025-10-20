@@ -11,6 +11,16 @@ function NovoUsuario() {
     const [mensagem, setMensagem] = useState('');
     const navigate = useNavigate();
 
+    // ✅ NOVO: Função para verificar se usuário já está cadastrado no sistema
+    const verificarUsuarioCadastrado = async (login) => {
+        try {
+            const response = await fetch(`/api/usuarios/existe/${login}`); // Ajuste a URL conforme sua API
+            return response.ok;
+        } catch {
+            return false; // Se der erro na verificação, assume que NÃO está cadastrado
+        }
+    };
+
     const manipularBuscarUsuario = async () => {
         setMensagem('');
         
@@ -24,7 +34,15 @@ function NovoUsuario() {
         try {
             const dados = await obterUsuarioPorLogin(loginRede);
             
-            // ✅ AÇÃO PRINCIPAL: Navega para a próxima página, passando os dados do usuário no objeto state
+            // ✅ ALTERADO: Agora verifica cadastro ANTES de navegar
+            const jaCadastrado = await verificarUsuarioCadastrado(loginRede);
+            if (jaCadastrado) {
+                setMensagem('Usuário já cadastrado no Siplan!');
+                setCarregando(false);
+                return;
+            }
+
+            // Só navega se NÃO estiver cadastrado
             navigate(`/cadastros/configurar-usuario`, { 
                 state: { usuarioData: dados } 
             });
