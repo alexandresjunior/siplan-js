@@ -1,67 +1,72 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obterUsuarioPorLogin } from '../../../service/novoUsuarioService';
+import axios from 'axios'; // ✅ ADICIONE
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';
 
 function NovoUsuario() {
     const [loginRede, setLoginRede] = useState('');
     const [carregando, setCarregando] = useState(false);
-    // Removemos 'usuarioEncontrado'
     const [mensagem, setMensagem] = useState('');
     const navigate = useNavigate();
 
-    // ✅ NOVO: Função para verificar se usuário já está cadastrado no sistema
+    // ✅ CORRIGIDO: Verifica APENAS no BANCO COMPESA
     const verificarUsuarioCadastrado = async (login) => {
-        try {
-            const response = await fetch(`/api/usuarios/existe/${login}`); // Ajuste a URL conforme sua API
-            return response.ok;
-        } catch {
-            return false; // Se der erro na verificação, assume que NÃO está cadastrado
-        }
-    };
-
-    const manipularBuscarUsuario = async () => {
-        setMensagem('');
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:8098/usuariosip/usuarioscadastrados', {
+            headers: { 'Authorization': `Bearer ${token}` },
+            params: { page: 0, size: 1000 } // Pega todos pra buscar
+        });
         
-        if (loginRede.trim() === '') {
-            setMensagem('Por favor, insira o login de rede.');
+        const usuariosCadastrados = response.data.content || [];
+        return usuariosCadastrados.some(usuario => usuario.login === login);
+    } catch {
+        return false;
+    }
+};
+
+const manipularBuscarUsuario = async () => {
+    setMensagem('');
+    
+    if (loginRede.trim() === '') {
+        setMensagem('Por favor, insira o login de rede.');
+        return;
+    }
+    
+    setCarregando(true);
+
+    try {
+        // ✅ 1º: VERIFICA NA LISTA CADASTRADOS FINAL
+        const jaCadastrado = await verificarUsuarioCadastrado(loginRede);
+        if (jaCadastrado) {
+            setMensagem('Usuário já cadastrado no Siplan!');
+            setCarregando(false);
             return;
         }
+
+        // ✅ 2º: Busca no SIPLAN pra permissões atualizadas
+        const dados = await obterUsuarioPorLogin(loginRede);
         
-        setCarregando(true);
+        // ✅ 3º: Navega pra inserir na lista cadastrados
+        navigate(`/cadastros/configurar-usuario`, { 
+            state: { usuarioData: dados } 
+        });
 
-        try {
-            const dados = await obterUsuarioPorLogin(loginRede);
-            
-            // ✅ ALTERADO: Agora verifica cadastro ANTES de navegar
-            const jaCadastrado = await verificarUsuarioCadastrado(loginRede);
-            if (jaCadastrado) {
-                setMensagem('Usuário já cadastrado no Siplan!');
-                setCarregando(false);
-                return;
-            }
+    } catch (erro) {
+        const msgErro = erro.response && erro.response.status === 404
+            ? `Usuário com login "${loginRede}" não encontrado no Siplan.`
+            : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
+        
+        setMensagem(msgErro);
+        
+    } finally {
+        setCarregando(false);
+    }
+};
 
-            // Só navega se NÃO estiver cadastrado
-            navigate(`/cadastros/configurar-usuario`, { 
-                state: { usuarioData: dados } 
-            });
-
-        } catch (erro) {
-            // Se o Axios retornar 404 (Usuário não encontrado), a mensagem de erro será tratada aqui.
-            const msgErro = erro.response && erro.response.status === 404
-                ? `Usuário com login "${loginRede}" não encontrado no Siplan. Inicie o cadastro.`
-                : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
-            
-            setMensagem(msgErro);
-            
-        } finally {
-            setCarregando(false);
-        }
-    };
-
-    // Removemos a função renderizarResultado, pois a exibição será feita na próxima página.
-
+    // JSX permanece IGUAL
     return (
         <>
             <Cabecalho />
@@ -70,10 +75,7 @@ function NovoUsuario() {
                     <div className="col-md-8 col-lg-6">
                         <h3 className="mb-4">Cadastrar Novo Usuário</h3>
                         
-                        {/* Área de Mensagens de Feedback */}
                         {mensagem && (
-                            // Se a busca falhou, geralmente é alert-danger, a menos que você queira 
-                            // um feedback específico de sucesso (que agora é a navegação).
                             <div className={`alert alert-danger fade show`} role="alert">
                                 {mensagem}
                             </div>
@@ -81,7 +83,6 @@ function NovoUsuario() {
                         
                         <div className="card shadow-sm">
                             <div className="card-body p-4">
-                                
                                 <div className="mb-4">
                                     <label htmlFor="loginRedeInput" className="form-label">
                                         Login de Rede*

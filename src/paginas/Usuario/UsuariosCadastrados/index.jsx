@@ -63,6 +63,13 @@ function Usuario() {
   const [filtroNome, setFiltroNome] = useState('');
   const [permissoesSelecionadas, setPermissoesSelecionadas] = useState([]);
 
+  const [alertaSucessoExclusao, setAlertaSucessoExclusao] = useState(false);
+
+  const mostrarAlertaSucessoExclusao = () => {
+    setAlertaSucessoExclusao(true);
+    setTimeout(() => setAlertaSucessoExclusao(false), 2000);
+  };
+
   const location = useLocation(); // ← ADICIONE ISSO
 
 
@@ -85,81 +92,81 @@ function Usuario() {
     setPaginaAtual(0); // Reseta a paginação ao mudar o filtro
   };
 
- useEffect(() => {
-  const buscarUsuariosFiltrados = async () => {
-    setCarregando(true);
-    setMensagemErro('');
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setMensagemErro('Token de autenticação não encontrado.');
-        setCarregando(false);
-        return;
-      }
-
-      const headers = { 'Authorization': `Bearer ${token}` };
-      let response;
-
-      // 1. Filtro por nome (se preenchido) como prioridade inicial
-      if (filtroNome.trim()) {
-        const url = URL_FILTRO_NOME;
-        console.log('Requisição por nome:', url);
-        response = await axios.get(url, {
-          headers,
-          params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
-        });
-        let usuariosDaApi = response.data.content || [];
-        setTotalPaginas(response.data.totalPages || 0);
-        setTotalElementos(response.data.totalElements || 0);
-
-        // 2. Aplicar filtro secundário por permissões no cliente, se houver
-        if (permissoesSelecionadas.length > 0) {
-          usuariosDaApi = usuariosDaApi.filter(usuario =>
-            permissoesSelecionadas.every(p => usuario[p] === true)
-          );
-          setTotalPaginas(1); // Ajuste manual para refletir a nova contagem
-          setTotalElementos(usuariosDaApi.length);
+  useEffect(() => {
+    const buscarUsuariosFiltrados = async () => {
+      setCarregando(true);
+      setMensagemErro('');
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setMensagemErro('Token de autenticação não encontrado.');
+          setCarregando(false);
+          return;
         }
-        setUsuarios(usuariosDaApi);
 
-        // 3. Apenas filtro por permissões, se nome estiver vazio e houver permissões
-      } else if (permissoesSelecionadas.length > 0) {
-        const params = {};
-        permissoesSelecionadas.forEach(p => {
-          params[p] = true;
-        });
-        console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
-        response = await axios.get(URL_FILTRO_PERMISSAO, {
-          headers,
-          params: { ...params, page: paginaAtual, size: tamanhoPagina }
-        });
-        setUsuarios(response.data.content || []);
-        setTotalPaginas(response.data.totalPages || 0);
-        setTotalElementos(response.data.totalElements || 0);
+        const headers = { 'Authorization': `Bearer ${token}` };
+        let response;
 
-        // 4. Nenhum filtro ativo, busca todos os usuários paginados
-      } else {
-        console.log('Requisição padrão (sem filtros):', URL_API);
-        response = await axios.get(URL_API, {
-          headers,
-          params: { page: paginaAtual, size: tamanhoPagina }
-        });
-        setUsuarios(response.data.content || []);
-        setTotalPaginas(response.data.totalPages || 0);
-        setTotalElementos(response.data.totalElements || 0);
+        // 1. Filtro por nome (se preenchido) como prioridade inicial
+        if (filtroNome.trim()) {
+          const url = URL_FILTRO_NOME;
+          console.log('Requisição por nome:', url);
+          response = await axios.get(url, {
+            headers,
+            params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
+          });
+          let usuariosDaApi = response.data.content || [];
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
+
+          // 2. Aplicar filtro secundário por permissões no cliente, se houver
+          if (permissoesSelecionadas.length > 0) {
+            usuariosDaApi = usuariosDaApi.filter(usuario =>
+              permissoesSelecionadas.every(p => usuario[p] === true)
+            );
+            setTotalPaginas(1); // Ajuste manual para refletir a nova contagem
+            setTotalElementos(usuariosDaApi.length);
+          }
+          setUsuarios(usuariosDaApi);
+
+          // 3. Apenas filtro por permissões, se nome estiver vazio e houver permissões
+        } else if (permissoesSelecionadas.length > 0) {
+          const params = {};
+          permissoesSelecionadas.forEach(p => {
+            params[p] = true;
+          });
+          console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
+          response = await axios.get(URL_FILTRO_PERMISSAO, {
+            headers,
+            params: { ...params, page: paginaAtual, size: tamanhoPagina }
+          });
+          setUsuarios(response.data.content || []);
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
+
+          // 4. Nenhum filtro ativo, busca todos os usuários paginados
+        } else {
+          console.log('Requisição padrão (sem filtros):', URL_API);
+          response = await axios.get(URL_API, {
+            headers,
+            params: { page: paginaAtual, size: tamanhoPagina }
+          });
+          setUsuarios(response.data.content || []);
+          setTotalPaginas(response.data.totalPages || 0);
+          setTotalElementos(response.data.totalElements || 0);
+        }
+      } catch (erro) {
+        console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
+        setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
+        setUsuarios([]);
+        setTotalPaginas(0);
+        setTotalElementos(0);
       }
-    } catch (erro) {
-      console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
-      setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
-      setUsuarios([]);
-      setTotalPaginas(0);
-      setTotalElementos(0);
-    }
-    setCarregando(false);
-  };
+      setCarregando(false);
+    };
 
-  buscarUsuariosFiltrados();
-}, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas, location.search]);
+    buscarUsuariosFiltrados();
+  }, [paginaAtual, tamanhoPagina, filtroNome, permissoesSelecionadas, location.search]);
 
   useEffect(() => {
     const carregarOpcoesDiretoria = async () => {
@@ -427,35 +434,23 @@ function Usuario() {
     // Lógica para abrir modal de adicionar elemento
   };
 
-  const handleExcluirUsuario = (idUsuario) => {
-    // Usando Modal customizado em vez de window.confirm
-    const customConfirm = (message, onConfirm) => {
-      console.warn(`Confirmação: ${message}. Excluindo usuário ${idUsuario}...`);
-      if (true) { // Simulação de confirmação positiva
-        manipularExcluir(
-          setUsuarios, // setUsuarios
-          setPaginaAtual, // setPaginaAtual
-          setCarregando, // setCarregando
-          idUsuario,
-          usuarios,
-          tamanhoPagina,
-          paginaAtual,
-          URL_EXCLUIR_USUARIO
-        );
-      }
-    };
-    customConfirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`, () => {
+  const handleExcluirUsuario = async (idUsuario) => {
+    const confirmacao = window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`);
+    if (confirmacao) {
       manipularExcluir(
-        setUsuarios, // setUsuarios
-        setPaginaAtual, // setPaginaAtual
-        setCarregando, // setCarregando
+        setUsuarios,
+        setPaginaAtual,
+        setCarregando,
         idUsuario,
         usuarios,
         tamanhoPagina,
         paginaAtual,
         URL_EXCLUIR_USUARIO
       );
-    });
+
+      // ✅ NOVO: Alerta de sucesso (adicione este estado)
+      setTimeout(() => mostrarAlertaSucessoExclusao(), 500);
+    }
   };
 
   const renderizarElementosOrganizacionais = () => {
@@ -646,203 +641,220 @@ function Usuario() {
     ));
   };
 
-return (
-  <>
-    <Cabecalho />
-    <div className="container mt-5 mb-3">
-      {alertaSucesso && (
-        <div
-          className="alert alert-success alert-dismissible fade show"
-          role="alert"
-          style={{
-            position: 'fixed',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 2000,
-            width: '50%',
-            maxWidth: '500px'
-          }}
-        >
-          Indicadores salvos com sucesso!
-        </div>
-      )}
-      <div className="row mb-3">
-        <div className="col">
-          <h3 className="mb-0">Usuários Cadastrados</h3>
-        </div>
-        <div className="col-auto">
-          <Link to="/usuarios/novo" className="btn btn-primary">Novo Usuário</Link>
-        </div>
-      </div>
-      <div className="mb-4">
-        <div className="mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Filtrar usuário por nome..."
-            value={filtroNome}
-            onChange={(e) => {
-              setFiltroNome(e.target.value);
-              setPaginaAtual(0); 
+  return (
+    <>
+      <Cabecalho />
+      <div className="container mt-5 mb-3">
+        {alertaSucesso && (
+          <div
+            className="alert alert-success alert-dismissible fade show"
+            role="alert"
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 2000,
+              width: '50%',
+              maxWidth: '500px'
             }}
-          />
-        </div>
-        <div className="d-flex flex-wrap mb-4">
-          {permissoesDisponiveis.map((p) => (
-            <div className="form-check form-check-inline me-3 mb-2" key={p.key}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`check-${p.key}`}
-                checked={permissoesSelecionadas.includes(p.key)}
-                onChange={() => handlePermissaoChange(p.key)}
-              />
-              <label className="form-check-label" htmlFor={`check-${p.key}`}>
-                {p.label}
-              </label>
-            </div>
-          ))}
-        </div>
-        {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
-      </div>
-
-      <div className="card">
-        <div className="card-body">
-          <table className="table table-striped">
-            <thead>
-              <tr className="table-light">
-                <th className="p-3">Nome</th>
-                <th className="p-3">Lotação</th>
-                <th className="p-3" style={{ width: "40%" }}>Permissões</th>
-                <th className="p-3"></th>
-              </tr>
-            </thead>
-            <tbody>{renderizarUsuarios()}</tbody>
-          </table>
-          {(filtroNome.trim() || permissoesSelecionadas.length > 0 || totalPaginas > 0) && (
-            <Pagination
-              estilos="d-flex justify-content-between align-items-center mt-4"
-              pagina={paginaAtual}
-              setPagina={setPaginaAtual}
-              tamanho={tamanhoPagina}
-              setTamanho={setTamanhoPagina}
-              totalPaginas={totalPaginas}
-              totalElementos={totalElementos}
-              opcoesPagina={[10, 20, 40]}
-            />
-          )}
-        </div>
-      </div>
-      <Modal
-        estaAberto={exibirModalIndicadores}
-        aoFechar={() => setExibirModalIndicadores(false)} // setExibirModalIndicadores
-        titulo={`Indicadores Liberados`}
-        botoesAcao={botoesAcaoModalIndicadores}
-      >
-        <div className="card-body">
-          <table className="table table-striped">
-            <thead>
-              <tr className="table-light">
-                <th className="p-3">Nome</th>
-                <th className="p-3">Tipo</th>
-                <th className="p-3 text-danger d-flex justify-content-center">Excluir</th>
-              </tr>
-            </thead>
-            <tbody>{renderizarIndicadores()}</tbody>
-          </table>
-        </div>
-      </Modal>
-      <Modal
-        estaAberto={exibirModalAdicionar}
-        aoFechar={fecharModalAdicionar}
-        titulo={`Adicionar Indicador`}
-        botoesAcao={botoesAcaoModalAdicionar}
-      >
-        {renderizarFormularioAdicionar()}
-      </Modal>
-      <Modal
-        estaAberto={exibirModalEditar}
-        aoFechar={fecharModalEditar}
-        titulo={`Editar Permissões`}
-        botoesAcao={botoesAcaoModalEditar}
-      >
-        {usuarioEditando && (
-          <div className="card-body">
-            <div className="mb-3">
-              <label className="form-label">Nome:</label>
-              <input type="text" className="form-control text-muted" value={usuarioEditando.nome || ''} readOnly disabled />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Lotação:</label>
-              <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual|| 'Não especificada'} readOnly disabled />
-            </div>
-            <h5>Permissões de Acesso</h5>
-            <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={usuarioEditando.administrador}
-                onChange={(e) => atualizarPermissao('administrador', e.target.checked)}
-              />
-              <label className="form-check-label">Administrador</label>
-            </div>
-            <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={usuarioEditando.pareto}
-                onChange={(e) => atualizarPermissao('pareto', e.target.checked)}
-              />
-              <label className="form-check-label">Visualizar Pareto</label>
-            </div>
-            <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={usuarioEditando.atualizarLotAutomatica}
-                onChange={(e) => atualizarPermissao('atualizarLotAutomatica', e.target.checked)}
-              />
-              <label className="form-check-label">Atualização Automática</label>
-            </div>
-            <div className="form-check">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={usuarioEditando.administradorRisco}
-                onChange={(e) => atualizarPermissao('administradorRisco', e.target.checked)}
-              />
-              <label className="form-check-label">Administrador de Riscos</label>
-            </div>
+          >
+            Indicadores salvos com sucesso!
           </div>
         )}
-      </Modal>
-      <Modal
-        estaAberto={exibirModalElementos}
-        aoFechar={fecharModalElementos}
-        titulo={`Elementos Organizacionais Liberados`}
-        botoesAcao={[
-          { label: 'Adicionar Elemento Organizacional', className: 'btn btn-primary', onClick: abrirModalAdicionarElemento },
-          { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalElementos }
-        ]}
-      >
-        <div className="card-body">
-          <table className="table table-striped">
-            <thead>
-              <tr className="table-light">
-                <th className="p-3">Unidade</th>
-                <th className="p-3">Nome</th>
-                <th className="p-3">Ano Organograma</th>
-              </tr>
-            </thead>
-            <tbody>{renderizarElementosOrganizacionais()}</tbody>
-          </table>
+        {alertaSucessoExclusao && (
+          <div
+            className="alert alert-success alert-dismissible fade show"
+            role="alert"
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 2000,
+              width: '50%',
+              maxWidth: '500px'
+            }}
+          >
+            Usuário excluído com sucesso!
+          </div>
+        )}
+        <div className="row mb-3">
+          <div className="col">
+            <h3 className="mb-0">Usuários Cadastrados</h3>
+          </div>
+          <div className="col-auto">
+            <Link to="/usuarios/novo" className="btn btn-primary">Novo Usuário</Link>
+          </div>
         </div>
-      </Modal>
-    </div>
-    <Rodape />
-  </>
-);
+        <div className="mb-4">
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Filtrar usuário por nome..."
+              value={filtroNome}
+              onChange={(e) => {
+                setFiltroNome(e.target.value);
+                setPaginaAtual(0);
+              }}
+            />
+          </div>
+          <div className="d-flex flex-wrap mb-4">
+            {permissoesDisponiveis.map((p) => (
+              <div className="form-check form-check-inline me-3 mb-2" key={p.key}>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id={`check-${p.key}`}
+                  checked={permissoesSelecionadas.includes(p.key)}
+                  onChange={() => handlePermissaoChange(p.key)}
+                />
+                <label className="form-check-label" htmlFor={`check-${p.key}`}>
+                  {p.label}
+                </label>
+              </div>
+            ))}
+          </div>
+          {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            <table className="table table-striped">
+              <thead>
+                <tr className="table-light">
+                  <th className="p-3">Nome</th>
+                  <th className="p-3">Lotação</th>
+                  <th className="p-3" style={{ width: "40%" }}>Permissões</th>
+                  <th className="p-3"></th>
+                </tr>
+              </thead>
+              <tbody>{renderizarUsuarios()}</tbody>
+            </table>
+            {(filtroNome.trim() || permissoesSelecionadas.length > 0 || totalPaginas > 0) && (
+              <Pagination
+                estilos="d-flex justify-content-between align-items-center mt-4"
+                pagina={paginaAtual}
+                setPagina={setPaginaAtual}
+                tamanho={tamanhoPagina}
+                setTamanho={setTamanhoPagina}
+                totalPaginas={totalPaginas}
+                totalElementos={totalElementos}
+                opcoesPagina={[10, 20, 40]}
+              />
+            )}
+          </div>
+        </div>
+        <Modal
+          estaAberto={exibirModalIndicadores}
+          aoFechar={() => setExibirModalIndicadores(false)} // setExibirModalIndicadores
+          titulo={`Indicadores Liberados`}
+          botoesAcao={botoesAcaoModalIndicadores}
+        >
+          <div className="card-body">
+            <table className="table table-striped">
+              <thead>
+                <tr className="table-light">
+                  <th className="p-3">Nome</th>
+                  <th className="p-3">Tipo</th>
+                  <th className="p-3 text-danger d-flex justify-content-center">Excluir</th>
+                </tr>
+              </thead>
+              <tbody>{renderizarIndicadores()}</tbody>
+            </table>
+          </div>
+        </Modal>
+        <Modal
+          estaAberto={exibirModalAdicionar}
+          aoFechar={fecharModalAdicionar}
+          titulo={`Adicionar Indicador`}
+          botoesAcao={botoesAcaoModalAdicionar}
+        >
+          {renderizarFormularioAdicionar()}
+        </Modal>
+        <Modal
+          estaAberto={exibirModalEditar}
+          aoFechar={fecharModalEditar}
+          titulo={`Editar Permissões`}
+          botoesAcao={botoesAcaoModalEditar}
+        >
+          {usuarioEditando && (
+            <div className="card-body">
+              <div className="mb-3">
+                <label className="form-label">Nome:</label>
+                <input type="text" className="form-control text-muted" value={usuarioEditando.nome || ''} readOnly disabled />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Lotação:</label>
+                <input type="text" className="form-control text-muted" value={usuarioEditando.lotacaoAtual || 'Não especificada'} readOnly disabled />
+              </div>
+              <h5>Permissões de Acesso</h5>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.administrador}
+                  onChange={(e) => atualizarPermissao('administrador', e.target.checked)}
+                />
+                <label className="form-check-label">Administrador</label>
+              </div>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.pareto}
+                  onChange={(e) => atualizarPermissao('pareto', e.target.checked)}
+                />
+                <label className="form-check-label">Visualizar Pareto</label>
+              </div>
+              <div className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.atualizarLotAutomatica}
+                  onChange={(e) => atualizarPermissao('atualizarLotAutomatica', e.target.checked)}
+                />
+                <label className="form-check-label">Atualização Automática</label>
+              </div>
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={usuarioEditando.administradorRisco}
+                  onChange={(e) => atualizarPermissao('administradorRisco', e.target.checked)}
+                />
+                <label className="form-check-label">Administrador de Riscos</label>
+              </div>
+            </div>
+          )}
+        </Modal>
+        <Modal
+          estaAberto={exibirModalElementos}
+          aoFechar={fecharModalElementos}
+          titulo={`Elementos Organizacionais Liberados`}
+          botoesAcao={[
+            { label: 'Adicionar Elemento Organizacional', className: 'btn btn-primary', onClick: abrirModalAdicionarElemento },
+            { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalElementos }
+          ]}
+        >
+          <div className="card-body">
+            <table className="table table-striped">
+              <thead>
+                <tr className="table-light">
+                  <th className="p-3">Unidade</th>
+                  <th className="p-3">Nome</th>
+                  <th className="p-3">Ano Organograma</th>
+                </tr>
+              </thead>
+              <tbody>{renderizarElementosOrganizacionais()}</tbody>
+            </table>
+          </div>
+        </Modal>
+      </div>
+      <Rodape />
+    </>
+  );
 }
 
 export default Usuario;
