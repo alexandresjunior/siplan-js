@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obterUsuarioPorLogin } from '../../../service/novoUsuarioService';
-import axios from 'axios'; // ✅ ADICIONE
+import axios from 'axios';
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';
 
@@ -11,62 +11,57 @@ function NovoUsuario() {
     const [mensagem, setMensagem] = useState('');
     const navigate = useNavigate();
 
-    // ✅ CORRIGIDO: Verifica APENAS no BANCO COMPESA
     const verificarUsuarioCadastrado = async (login) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8098/usuariosip/usuarioscadastrados', {
-            headers: { 'Authorization': `Bearer ${token}` },
-            params: { page: 0, size: 1000 } // Pega todos pra buscar
-        });
-        
-        const usuariosCadastrados = response.data.content || [];
-        return usuariosCadastrados.some(usuario => usuario.login === login);
-    } catch {
-        return false;
-    }
-};
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:8098/usuariosip/usuarioscadastrados', {
+                headers: { 'Authorization': `Bearer ${token}` },
+                params: { page: 0, size: 1000 }
+            });
 
-const manipularBuscarUsuario = async () => {
-    setMensagem('');
-    
-    if (loginRede.trim() === '') {
-        setMensagem('Por favor, insira o login de rede.');
-        return;
-    }
-    
-    setCarregando(true);
+            const usuariosCadastrados = response.data.content || [];
+            return usuariosCadastrados.some(usuario => usuario.login === login);
+        } catch {
+            return false;
+        }
+    };
 
-    try {
-        // ✅ 1º: VERIFICA NA LISTA CADASTRADOS FINAL
-        const jaCadastrado = await verificarUsuarioCadastrado(loginRede);
-        if (jaCadastrado) {
-            setMensagem('Usuário já cadastrado no Siplan!');
-            setCarregando(false);
+    const manipularBuscarUsuario = async () => {
+        setMensagem('');
+
+        if (loginRede.trim() === '') {
+            setMensagem('Por favor, insira o login de rede.');
             return;
         }
 
-        // ✅ 2º: Busca no SIPLAN pra permissões atualizadas
-        const dados = await obterUsuarioPorLogin(loginRede);
-        
-        // ✅ 3º: Navega pra inserir na lista cadastrados
-        navigate(`/cadastros/configurar-usuario`, { 
-            state: { usuarioData: dados } 
-        });
+        setCarregando(true);
 
-    } catch (erro) {
-        const msgErro = erro.response && erro.response.status === 404
-            ? `Usuário com login "${loginRede}" não encontrado no Siplan.`
-            : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
-        
-        setMensagem(msgErro);
-        
-    } finally {
-        setCarregando(false);
-    }
-};
+        try {
+            const jaCadastrado = await verificarUsuarioCadastrado(loginRede);
+            if (jaCadastrado) {
+                setMensagem('Usuário já cadastrado no Siplan!');
+                setCarregando(false);
+                return;
+            }
 
-    // JSX permanece IGUAL
+            const dados = await obterUsuarioPorLogin(loginRede);
+
+            navigate(`/cadastros/configurar-usuario`, {
+                state: { usuarioData: dados }
+            });
+
+        } catch (erro) {
+            const msgErro = erro.response && erro.response.status === 404
+                ? `Usuário com login "${loginRede}" não encontrado no Siplan.`
+                : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
+
+            setMensagem(msgErro);
+
+        } finally {
+            setCarregando(false);
+        }
+    };
+
     return (
         <>
             <Cabecalho />
@@ -74,13 +69,13 @@ const manipularBuscarUsuario = async () => {
                 <div className="row justify-content-center">
                     <div className="col-md-8 col-lg-6">
                         <h3 className="mb-4">Cadastrar Novo Usuário</h3>
-                        
+
                         {mensagem && (
                             <div className={`alert alert-danger fade show`} role="alert">
                                 {mensagem}
                             </div>
                         )}
-                        
+
                         <div className="card shadow-sm">
                             <div className="card-body p-4">
                                 <div className="mb-4">
@@ -98,10 +93,10 @@ const manipularBuscarUsuario = async () => {
                                     />
                                 </div>
                                 <div className="d-flex justify-content-end mt-4">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="btn btn-outline-secondary me-2"
-                                        onClick={() => navigate('/cadastros/usuarioscadastrados')} 
+                                        onClick={() => navigate('/cadastros/usuarioscadastrados')}
                                         disabled={carregando}
                                     >
                                         Voltar

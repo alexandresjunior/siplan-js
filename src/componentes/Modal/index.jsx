@@ -4,7 +4,6 @@ import './estilos.css';
 const Modal = ({ estaAberto, aoFechar, titulo, children, botoesAcao = [] }) => {
   if (!estaAberto) return null;
 
-  // Verifica se já existe um botão "Sair" em botoesAcao
   const temBotaoSair = botoesAcao.some(botao => botao.label === 'Sair');
 
   return (
@@ -38,7 +37,6 @@ const Modal = ({ estaAberto, aoFechar, titulo, children, botoesAcao = [] }) => {
             </div>
           </div>
           <div className="modal-body">{children}</div>
-          {/* Removido o modal-footer para eliminar o botão "Adicionar Indicador" da parte inferior */}
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ function ConfigurarNovoUsuario() {
 
     const getInitialUser = (original) => {
         if (!original) return null;
-        // Retorna os dados brutos do DTO
+
         return { ...original };
     };
 
@@ -20,16 +20,11 @@ function ConfigurarNovoUsuario() {
     const [carregando, setCarregando] = useState(false);
     const [mensagem, setMensagem] = useState('');
 
-    // =======================================================================
-    // ESTADOS SEPARADOS PARA AS PERMISSÕES (SEM DEVELOPER)
-    // =======================================================================
     const [administrador, setAdministrador] = useState(false);
     const [administradorRisco, setAdministradorRisco] = useState(false);
     const [atualizarLotAutomatica, setAtualizarLotAutomatica] = useState(false);
     const [pareto, setPareto] = useState(false);
-    // =======================================================================
 
-    // Objeto de mapeamento para o JSX (lê os estados separados)
     const PERMISSION_VALUES = useMemo(() => ({
         administrador: administrador,
         administradorRisco: administradorRisco,
@@ -44,18 +39,18 @@ function ConfigurarNovoUsuario() {
         { key: 'pareto', label: 'Visualizar Pareto' },
     ], []);
 
-    // 🎯 LISTA DE CHAVES A SEREM EXCLUÍDAS NA RENDERIZAÇÃO DE DETALHES
+
     const CHAVES_EXCLUIDAS_DETALHES = useMemo(() => [
-        'elementosOrganizacionaisLiberados', // Objeto complexo
-        'indicadoresLiberados',              // Objeto complexo
-        'administrador',                     // Gerenciado separadamente
-        'administradorRisco',                // Gerenciado separadamente
-        'atualizarLotAutomatica',            // Gerenciado separadamente
-        'pareto',                            // Gerenciado separadamente
-        'usuarioComum',                      // Propriedade de controle interno
+        'elementosOrganizacionaisLiberados',
+        'indicadoresLiberados',
+        'administrador',
+        'administradorRisco',
+        'atualizarLotAutomatica',
+        'pareto',
+        'usuarioComum',
     ], []);
 
-    // Função auxiliar para obter o rótulo formatado
+
     const getLabel = (key) => {
         switch (key) {
             case 'id': return 'ID';
@@ -69,7 +64,7 @@ function ConfigurarNovoUsuario() {
         }
     };
 
-    // Função auxiliar para obter o valor formatado
+
     const getValue = (key) => {
         const valor = usuario[key];
         if (key === 'ativo') {
@@ -81,7 +76,7 @@ function ConfigurarNovoUsuario() {
         return valor || 'N/A';
     }
 
-    // Efeito para checar se os dados vieram E SINCRONIZAR OS ESTADOS SEPARADOS
+
     useEffect(() => {
         if (!usuarioOriginal) {
             setMensagem('Nenhum usuário foi fornecido. Voltando para a busca.');
@@ -91,7 +86,7 @@ function ConfigurarNovoUsuario() {
             return () => clearTimeout(timer);
         }
 
-        // SINCRONIZAÇÃO INICIAL dos estados separados
+
         if (usuarioOriginal) {
             setAdministrador(usuarioOriginal.administrador ?? false);
             setAdministradorRisco(usuarioOriginal.administradorRisco ?? false);
@@ -109,7 +104,6 @@ function ConfigurarNovoUsuario() {
         );
     }
 
-    // Função de manipulação para as checkboxes. ATUALIZA APENAS OS ESTADOS SEPARADOS.
     const manipularMudarPermissao = (permissao, valor) => {
         switch (permissao) {
             case 'administrador':
@@ -129,111 +123,104 @@ function ConfigurarNovoUsuario() {
         }
     };
 
-   const manipularSalvar = async () => {
-    setCarregando(true);
-    setMensagem('');
+    const manipularSalvar = async () => {
+        setCarregando(true);
+        setMensagem('');
 
-    try {
-        // ✅ DEBUG: TESTA SE USUÁRIO JÁ EXISTE!
-        if (!usuario.id) {
-            console.log("🔍 TESTANDO LOGIN:", usuario.login);
+        try {
+
+            if (!usuario.id) {
+                const token = localStorage.getItem('token');
+
+                const response = await axios.get(`http://localhost:8098/usuariosip/obterporlogin/${usuario.login}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(erro => {
+                    return { erro: erro.response?.status };
+                });
+
+
+                if (!response.erro) {
+
+                    setMensagem(`⚠️ Usuário '${usuario.login}' já está cadastrado no Siplan!`);
+                    setCarregando(false);
+                    return;
+                } else if (response.erro !== 404) {
+                    throw new Error("Erro no servidor");
+                }
+            }
+
+            const usuarioDTO = {
+                id: usuario.id,
+                nome: usuario.nome,
+                login: usuario.login,
+                lotacaoAtual: usuario.lotacaoAtual,
+                administrador,
+                administradorRisco,
+                atualizarLotAutomatica,
+                pareto,
+            };
+
+            delete usuarioDTO.usuarioComum;
+
             const token = localStorage.getItem('token');
-            
-            const response = await axios.get(`http://localhost:8098/usuariosip/obterporlogin/${usuario.login}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).catch(erro => {
-                console.log("🔍 ERRO DO ENDPOINT:", erro.response?.status);
-                return { erro: erro.response?.status };
+            const resposta = await axios.post(`http://localhost:8098/usuariosip/atualizarUsuarioV2`, usuarioDTO, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
 
-            // ✅ DEBUG NO CONSOLE
-            console.log("🔍 RESPOSTA:", response);
+            const usuarioAtualizado = resposta.data;
+            setMensagem(`✅ ${usuarioAtualizado.login} salvo com sucesso!`);
+            setUsuario(usuarioAtualizado);
 
-            if (!response.erro) {
-                // 200 OK = JÁ EXISTE!
-                console.log("❌ USUÁRIO JÁ EXISTE!");
-                setMensagem(`⚠️ Este usuário '${usuario.login}' já é cadastrado no Siplan!`);
-                setCarregando(false);
-                return;
-            } else if (response.erro !== 404) {
-                throw new Error("Erro no servidor");
-            }
+
+            await buscarListaEAdicionar(usuarioAtualizado);
+
+        } catch (erro) {
+            setMensagem(`❌ Falha: ${erro.response?.data?.message || erro.message}`);
+        } finally {
+            setCarregando(false);
         }
+    };
 
-        const usuarioDTO = {
-            id: usuario.id,
-            nome: usuario.nome,
-            login: usuario.login,
-            lotacaoAtual: usuario.lotacaoAtual,
-            administrador,
-            administradorRisco,
-            atualizarLotAutomatica,
-            pareto,
-        };
 
-        delete usuarioDTO.usuarioComum;
-        console.log("DEBUG: DTO Final:", usuarioDTO);
+    const buscarListaEAdicionar = async (novoUsuario) => {
+        try {
+            const token = localStorage.getItem('token');
 
-        const token = localStorage.getItem('token');
-        const resposta = await axios.post(`http://localhost:8098/usuariosip/atualizarUsuarioV2`, usuarioDTO, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
 
-        const usuarioAtualizado = resposta.data;
-        setMensagem(`✅ ${usuarioAtualizado.login} salvo com sucesso!`);
-        setUsuario(usuarioAtualizado);
+            const resposta = await axios.get(`http://localhost:8098/usuariosip/usuarioscadastrados`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                params: {
+                    page: 0,
+                    size: 100,
+                    administrador: null,
+                    administradorRisco: null,
+                    pareto: null,
+                    atualizarLotAutomatica: null
+                }
+            });
 
-        // 🎯 CHAMA A LISTA E ADICIONA O USUÁRIO LOCALMENTE!
-        await buscarListaEAdicionar(usuarioAtualizado);
 
-    } catch (erro) {
-        setMensagem(`❌ Falha: ${erro.response?.data?.message || erro.message}`);
-    } finally {
-        setCarregando(false);
-    }
-};
+            const usuariosExistentes = resposta.data.content || [];
+            const usuariosAtualizados = [novoUsuario, ...usuariosExistentes.filter(u => u.id !== novoUsuario.id)];
 
-// 🆕 NOVA FUNÇÃO - BUSCA SEM FILTRO + ADICIONA
-const buscarListaEAdicionar = async (novoUsuario) => {
-    try {
-        const token = localStorage.getItem('token');
-        
-        // ✅ GET SEM FILTRO - Busca TODOS os usuários (mesmo sem permissão)
-        const resposta = await axios.get(`http://localhost:8098/usuariosip/usuarioscadastrados`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-            params: { 
-                page: 0, 
-                size: 100, // ← MAIS USUÁRIOS
-                administrador: null,  // ← SEM FILTRO
-                administradorRisco: null,
-                pareto: null,
-                atualizarLotAutomatica: null
-            }
-        });
+            localStorage.setItem('usuariosAtualizados', JSON.stringify(usuariosAtualizados));
 
-        // ✅ ADICIONA O NOVO NO TOPO (evita duplicatas)
-        const usuariosExistentes = resposta.data.content || [];
-        const usuariosAtualizados = [novoUsuario, ...usuariosExistentes.filter(u => u.id !== novoUsuario.id)];
-        
-        localStorage.setItem('usuariosAtualizados', JSON.stringify(usuariosAtualizados));
-        
-        setTimeout(() => {
-            navigate('/cadastros/usuarioscadastrados');
-        }, 1500);
-        
-    } catch (erro) {
-        console.error('Erro ao buscar lista:', erro);
-        // ✅ FALLBACK: Só o usuário novo
-        localStorage.setItem('usuariosAtualizados', JSON.stringify([novoUsuario]));
-        setTimeout(() => {
-            navigate('/cadastros/usuarioscadastrados');
-        }, 1500);
-    }
-};
+            setTimeout(() => {
+                navigate('/cadastros/usuarioscadastrados');
+            }, 1500);
 
-    // Função para renderizar todos os dados do objeto de usuário (APLICANDO O FILTRO)
+        } catch (erro) {
+            console.error('Erro ao buscar lista:', erro);
+            localStorage.setItem('usuariosAtualizados', JSON.stringify([novoUsuario]));
+            setTimeout(() => {
+                navigate('/cadastros/usuarioscadastrados');
+            }, 1500);
+        }
+    };
+
+
     const renderizarTodosOsDados = () => {
-        // Usa a lista de exclusão definida fora
+
         const chaves = Object.keys(usuario).filter(key => !CHAVES_EXCLUIDAS_DETALHES.includes(key));
 
         if (chaves.length === 0) {
@@ -256,7 +243,7 @@ const buscarListaEAdicionar = async (novoUsuario) => {
         );
     };
 
-    // Renderização do formulário
+
     return (
         <>
             <Cabecalho />
@@ -271,16 +258,16 @@ const buscarListaEAdicionar = async (novoUsuario) => {
                             </div>
                         )}
 
-                        {/* Seção ÚNICA de Dados e Permissões */}
+
                         <div className="card shadow-lg mb-4">
 
                             <div className="card-body">
 
-                                {/* Dados (Apenas leitura) */}
+
                                 <h5 className="border-bottom pb-2 mb-3 text-muted">Informações do Funcionário</h5>
                                 {renderizarTodosOsDados()}
 
-                                {/* Permissões (Checkboxes Editáveis) */}
+
                                 <h5 className="border-bottom pb-2 mb-3 text-primary">Permissões de Acesso</h5>
                                 <div className="row">
                                     {permissoes.map(p => (
@@ -301,7 +288,7 @@ const buscarListaEAdicionar = async (novoUsuario) => {
                                     ))}
                                 </div>
 
-                                {/* Ações */}
+
                                 <div className="d-flex justify-content-end mt-4 pt-3 border-top">
                                     <button
                                         type="button"

@@ -18,17 +18,15 @@ import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 
 
-// URLs (mantidas as originais)
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
 const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
 const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
 const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/filtro/porNome';
 const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
-const URL_ATUALIZAR_USUARIO_V2 = 'http://localhost:8098/usuariosip/atualizarUsuarioV2'; // ✅ NOVO
+const URL_ATUALIZAR_USUARIO_V2 = 'http://localhost:8098/usuariosip/atualizarUsuarioV2';
 
 function Usuario() {
-  // Refatoração dos nomes de estado para usar a convenção padrão 'set' (Ex: definirUsuarios -> setUsuarios)
   const [usuarios, setUsuarios] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [tamanhoPagina, setTamanhoPagina] = useState(20);
@@ -36,7 +34,6 @@ function Usuario() {
   const [totalElementos, setTotalElementos] = useState(0);
   const [carregando, setCarregando] = useState(true);
 
-  // Estados de Modal (Foco principal da correção, agora com 'set' prefixo)
   const [exibirModalIndicadores, setExibirModalIndicadores] = useState(false);
   const [exibirModalAdicionar, setExibirModalAdicionar] = useState(false);
   const [exibirModalEditar, setExibirModalEditar] = useState(false);
@@ -45,8 +42,6 @@ function Usuario() {
   const [exibirModalElementos, setExibirModalElementos] = useState(false);
   const [elementosOrganizacionais, setElementosOrganizacionais] = useState([]);
 
-
-  // Outros estados
   const posicaoRolagem = useRef(0);
   const [mensagemErro, setMensagemErro] = useState('');
   const [anoOrganograma, setAnoOrganograma] = useState('');
@@ -71,10 +66,9 @@ function Usuario() {
     setTimeout(() => setAlertaSucessoExclusao(false), 2000);
   };
 
-  const location = useLocation(); // ← ADICIONE ISSO
+  const location = useLocation();
 
 
-  // Mapeamento das permissões para os labels dos checkboxes
   const permissoesDisponiveis = [
     { key: 'administrador', label: 'Administrador' },
     { key: 'administradorRisco', label: 'Administrador de Risco' },
@@ -90,71 +84,71 @@ function Usuario() {
         return [...prevSelecionadas, permissaoKey];
       }
     });
-    setPaginaAtual(0); // Reseta a paginação ao mudar o filtro
+    setPaginaAtual(0);
   };
 
   const buscarUsuariosFiltrados = async () => {
     setCarregando(true);
     setMensagemErro('');
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setMensagemErro('Token de autenticação não encontrado.');
-            setCarregando(false);
-            return;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMensagemErro('Token de autenticação não encontrado.');
+        setCarregando(false);
+        return;
+      }
+
+      const headers = { 'Authorization': `Bearer ${token}` };
+      let response;
+
+      if (filtroNome.trim()) {
+        const url = URL_FILTRO_NOME;
+        response = await axios.get(url, {
+          headers,
+          params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
+        });
+        let usuariosDaApi = response.data.content || [];
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
+
+        if (permissoesSelecionadas.length > 0) {
+          usuariosDaApi = usuariosDaApi.filter(usuario =>
+            permissoesSelecionadas.every(p => usuario[p] === true)
+          );
+          setTotalPaginas(1);
+          setTotalElementos(usuariosDaApi.length);
         }
+        setUsuarios(usuariosDaApi);
 
-        const headers = { 'Authorization': `Bearer ${token}` };
-        let response;
+      } else if (permissoesSelecionadas.length > 0) {
+        const params = {};
+        permissoesSelecionadas.forEach(p => params[p] = true);
+        response = await axios.get(URL_FILTRO_PERMISSAO, {
+          headers,
+          params: { ...params, page: paginaAtual, size: tamanhoPagina }
+        });
+        setUsuarios(response.data.content || []);
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
 
-        if (filtroNome.trim()) {
-            const url = URL_FILTRO_NOME;
-            response = await axios.get(url, {
-                headers,
-                params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
-            });
-            let usuariosDaApi = response.data.content || [];
-            setTotalPaginas(response.data.totalPages || 0);
-            setTotalElementos(response.data.totalElements || 0);
-
-            if (permissoesSelecionadas.length > 0) {
-                usuariosDaApi = usuariosDaApi.filter(usuario =>
-                    permissoesSelecionadas.every(p => usuario[p] === true)
-                );
-                setTotalPaginas(1);
-                setTotalElementos(usuariosDaApi.length);
-            }
-            setUsuarios(usuariosDaApi);
-
-        } else if (permissoesSelecionadas.length > 0) {
-            const params = {};
-            permissoesSelecionadas.forEach(p => params[p] = true);
-            response = await axios.get(URL_FILTRO_PERMISSAO, {
-                headers,
-                params: { ...params, page: paginaAtual, size: tamanhoPagina }
-            });
-            setUsuarios(response.data.content || []);
-            setTotalPaginas(response.data.totalPages || 0);
-            setTotalElementos(response.data.totalElements || 0);
-
-        } else {
-            response = await axios.get(URL_API, {
-                headers,
-                params: { page: paginaAtual, size: tamanhoPagina }
-            });
-            setUsuarios(response.data.content || []);
-            setTotalPaginas(response.data.totalPages || 0);
-            setTotalElementos(response.data.totalElements || 0);
-        }
+      } else {
+        response = await axios.get(URL_API, {
+          headers,
+          params: { page: paginaAtual, size: tamanhoPagina }
+        });
+        setUsuarios(response.data.content || []);
+        setTotalPaginas(response.data.totalPages || 0);
+        setTotalElementos(response.data.totalElements || 0);
+      }
     } catch (erro) {
-        console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
-        setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
-        setUsuarios([]);
-        setTotalPaginas(0);
-        setTotalElementos(0);
+      console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
+      setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
+      setUsuarios([]);
+      setTotalPaginas(0);
+      setTotalElementos(0);
     }
     setCarregando(false);
-};
+  };
 
   useEffect(() => {
     buscarUsuariosFiltrados();
@@ -196,7 +190,7 @@ function Usuario() {
     const carregarIndicadoresLiberados = async () => {
       if (exibirModalIndicadores && idUsuarioSelecionado) {
         try {
-          await buscarIndicadores(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID); // setIndicadores
+          await buscarIndicadores(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
         } catch (erro) {
           console.error('Erro ao carregar indicadores liberados:', erro);
         }
@@ -217,9 +211,7 @@ function Usuario() {
   useEffect(() => {
     if (gerencia) {
       carregarOpcoesIndicadores();
-      // Não existe a função renderizarIndicadores fora do JSX, isso pode ser um bug lógico.
-      // Vou assumir que ela não é crítica aqui ou que o usuário a chamou por engano.
-      // renderizarIndicadores(); 
+
     }
   }, [gerencia]);
 
@@ -290,10 +282,10 @@ function Usuario() {
     }
   };
 
-  // Funções que estavam causando o problema com o setter
+
   const abrirModalIndicadores = (idUsuario) => {
-    setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
-    setExibirModalIndicadores(true); // *** CORREÇÃO: Usando o setter padronizado
+    setIdUsuarioSelecionado(idUsuario);
+    setExibirModalIndicadores(true);
   };
 
   const abrirModalAdicionar = () => {
@@ -304,24 +296,24 @@ function Usuario() {
     setOpcoesGerencia([]);
     setOpcoesIndicadores([]);
     setIndicadoresSelecionados([]);
-    setExibirModalAdicionar(true); // setExibirModalAdicionar
+    setExibirModalAdicionar(true);
   };
 
   const abrirModalEditar = (idUsuario) => {
     const usuario = usuarios.find(u => u.id === idUsuario);
     if (usuario) {
       setUsuarioEditando(usuario);
-      setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
-      setExibirModalEditar(true); // setExibirModalEditar
+      setIdUsuarioSelecionado(idUsuario);
+      setExibirModalEditar(true);
     }
   };
 
   const fecharModalAdicionar = () => {
-    setExibirModalAdicionar(false); // setExibirModalAdicionar
+    setExibirModalAdicionar(false);
   };
 
   const fecharModalEditar = () => {
-    setExibirModalEditar(false); // setExibirModalEditar
+    setExibirModalEditar(false);
     setUsuarioEditando(null);
   };
 
@@ -348,7 +340,7 @@ function Usuario() {
           usuarioId: idUsuarioSelecionado,
           indicadorId: parseInt(indicadorId)
         };
-        await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload); // setIndicadores
+        await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
 
       mostrarAlertaSucesso();
@@ -368,16 +360,12 @@ function Usuario() {
   };
 
   const manipularExcluirIndicador = (idIndicador) => {
-    // Usando Modal customizado em vez de window.confirm
     const customConfirm = (message, onConfirm) => {
-      // Implementação de um modal de confirmação customizado para ambientes iframes.
-      // Como não temos acesso aos componentes `Modal` e `window.confirm` deve ser evitado,
-      // aqui está um placeholder. Em um projeto real, você usaria o componente `Modal`
-      // para criar um diálogo de confirmação.
+
       console.warn(`Confirmação: ${message}. Excluindo indicador ${idIndicador}...`);
-      if (true) { // Simulação de confirmação positiva
+      if (true) {
         excluirIndicadorService(
-          setIndicadores, // setIndicadores
+          setIndicadores,
           idUsuarioSelecionado,
           idIndicador,
           URL_USUARIO_POR_ID,
@@ -387,7 +375,7 @@ function Usuario() {
     };
     customConfirm(`Tem certeza que deseja excluir o indicador com ID ${idIndicador}?`, () => {
       excluirIndicadorService(
-        setIndicadores, // setIndicadores
+        setIndicadores,
         idUsuarioSelecionado,
         idIndicador,
         URL_USUARIO_POR_ID,
@@ -396,42 +384,41 @@ function Usuario() {
     });
   };
 
- const handleSalvarPermissoes = async () => {
+  const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && usuarioEditando) {
-        setCarregando(true);
-        try {
-            const token = localStorage.getItem('token');
-            const payload = {
-                id: usuarioEditando.id,
-                login: usuarioEditando.login,
-                nome: usuarioEditando.nome,
-                lotacaoAtual: usuarioEditando.lotacaoAtual,
-                administrador: usuarioEditando.administrador,
-                pareto: usuarioEditando.pareto,
-                atualizarLotAutomatica: usuarioEditando.atualizarLotAutomatica,
-                administradorRisco: usuarioEditando.administradorRisco
-            };
+      setCarregando(true);
+      try {
+        const token = localStorage.getItem('token');
+        const payload = {
+          id: usuarioEditando.id,
+          login: usuarioEditando.login,
+          nome: usuarioEditando.nome,
+          lotacaoAtual: usuarioEditando.lotacaoAtual,
+          administrador: usuarioEditando.administrador,
+          pareto: usuarioEditando.pareto,
+          atualizarLotAutomatica: usuarioEditando.atualizarLotAutomatica,
+          administradorRisco: usuarioEditando.administradorRisco
+        };
 
-            await axios.post(URL_ATUALIZAR_USUARIO_V2, payload, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`, 
-                    'Content-Type': 'application/json' 
-                }
-            });
+        await axios.post(URL_ATUALIZAR_USUARIO_V2, payload, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-            setExibirModalEditar(false);
-            mostrarAlertaSucesso();
-            
-            // ✅ ISSO AQUI! ATUALIZA A LISTA IMEDIATAMENTE
-            buscarUsuariosFiltrados();
-            
-        } catch (erro) {
-            setMensagemErro(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`);
-        } finally {
-            setCarregando(false);
-        }
+        setExibirModalEditar(false);
+        mostrarAlertaSucesso();
+
+        buscarUsuariosFiltrados();
+
+      } catch (erro) {
+        setMensagemErro(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`);
+      } finally {
+        setCarregando(false);
+      }
     }
-};
+  };
 
   const atualizarPermissao = (permissao, valor) => {
     if (usuarioEditando) {
@@ -440,14 +427,14 @@ function Usuario() {
   };
 
   const abrirModalElementos = (idUsuario) => {
-    setIdUsuarioSelecionado(idUsuario); // setIdUsuarioSelecionado
-    setExibirModalElementos(true); // setExibirModalElementos
-    // Adicionar lógica para buscar elementos organizacionais aqui, se necessário
+    setIdUsuarioSelecionado(idUsuario);
+    setExibirModalElementos(true);
+    // Adicionar lógica para buscar elementos organizacionais 
     // setElementosOrganizacionais( buscarElementos(idUsuario) ); 
   };
 
   const fecharModalElementos = () => {
-    setExibirModalElementos(false); // setExibirModalElementos
+    setExibirModalElementos(false);
   };
 
   const abrirModalAdicionarElemento = () => {
@@ -468,7 +455,6 @@ function Usuario() {
         URL_EXCLUIR_USUARIO
       );
 
-      // ✅ NOVO: Alerta de sucesso (adicione este estado)
       setTimeout(() => mostrarAlertaSucessoExclusao(), 500);
     }
   };
@@ -520,7 +506,7 @@ function Usuario() {
     {
       label: 'Salvar',
       className: 'btn btn-primary',
-      onClick: handleSalvarPermissoes // Chama a função para salvar as permissões
+      onClick: handleSalvarPermissoes
     },
     {
       label: 'Sair',
@@ -768,7 +754,7 @@ function Usuario() {
         </div>
         <Modal
           estaAberto={exibirModalIndicadores}
-          aoFechar={() => setExibirModalIndicadores(false)} // setExibirModalIndicadores
+          aoFechar={() => setExibirModalIndicadores(false)}
           titulo={`Indicadores Liberados`}
           botoesAcao={botoesAcaoModalIndicadores}
         >
