@@ -12,13 +12,12 @@ function ConfigurarNovoUsuario() {
 
     const getInitialUser = (original) => {
         if (!original) return null;
-
         return { ...original };
     };
 
     const [usuario, setUsuario] = useState(getInitialUser(usuarioOriginal));
     const [carregando, setCarregando] = useState(false);
-    const [mensagem, setMensagem] = useState('');
+    const [alerta, setAlerta] = useState({ mostrar: false, mensagem: '', tipo: 'sucesso' });
 
     const [administrador, setAdministrador] = useState(false);
     const [administradorRisco, setAdministradorRisco] = useState(false);
@@ -39,7 +38,6 @@ function ConfigurarNovoUsuario() {
         { key: 'pareto', label: 'Visualizar Pareto' },
     ], []);
 
-
     const CHAVES_EXCLUIDAS_DETALHES = useMemo(() => [
         'elementosOrganizacionaisLiberados',
         'indicadoresLiberados',
@@ -50,7 +48,6 @@ function ConfigurarNovoUsuario() {
         'usuarioComum',
     ], []);
 
-
     const getLabel = (key) => {
         switch (key) {
             case 'id': return 'ID';
@@ -58,12 +55,11 @@ function ConfigurarNovoUsuario() {
             case 'lotacaoAtual': return 'Lotação Atual';
             case 'siglaLotacaoAtual': return 'Sigla Lotação Atual';
             case 'matricula': return 'Matrícula';
-            case 'tipoFuncionario': return 'Tipo Funcionário'
+            case 'tipoFuncionario': return 'Tipo Funcionário';
             case 'ativo': return 'Status';
             default: return key.replace(/([A-Z])/g, ' $1').trim();
         }
     };
-
 
     const getValue = (key) => {
         const valor = usuario[key];
@@ -74,18 +70,21 @@ function ConfigurarNovoUsuario() {
             return valor ? 'Sim' : 'Não';
         }
         return valor || 'N/A';
-    }
+    };
 
+    const mostrarAlerta = (mensagem, tipo = 'sucesso') => {
+        setAlerta({ mostrar: true, mensagem, tipo });
+        setTimeout(() => setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' }), 3000);
+    };
 
     useEffect(() => {
         if (!usuarioOriginal) {
-            setMensagem('Nenhum usuário foi fornecido. Voltando para a busca.');
+            mostrarAlerta('Nenhum usuário foi fornecido. Voltando para a busca.', 'erro');
             const timer = setTimeout(() => {
                 navigate('/cadastros/novousuario');
             }, 3000);
             return () => clearTimeout(timer);
         }
-
 
         if (usuarioOriginal) {
             setAdministrador(usuarioOriginal.administrador ?? false);
@@ -93,13 +92,26 @@ function ConfigurarNovoUsuario() {
             setAtualizarLotAutomatica(usuarioOriginal.atualizarLotAutomatica ?? false);
             setPareto(usuarioOriginal.pareto ?? false);
         }
-
     }, [usuarioOriginal, navigate]);
 
     if (!usuario) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100">
-                <div className="alert alert-danger" role="alert">{mensagem}</div>
+                <div
+                    className={`alert alert-${alerta.tipo === 'sucesso' ? 'success' : 'danger'} alert-dismissible fade show`}
+                    role="alert"
+                    style={{
+                        position: 'fixed',
+                        top: '20px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 2000,
+                        width: '50%',
+                        maxWidth: '500px'
+                    }}
+                >
+                    {alerta.mensagem}
+                </div>
             </div>
         );
     }
@@ -125,23 +137,19 @@ function ConfigurarNovoUsuario() {
 
     const manipularSalvar = async () => {
         setCarregando(true);
-        setMensagem('');
+        setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' });
 
         try {
-
             if (!usuario.id) {
                 const token = localStorage.getItem('token');
-
                 const response = await axios.get(`http://localhost:8098/usuariosip/obterporlogin/${usuario.login}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(erro => {
                     return { erro: erro.response?.status };
                 });
 
-
                 if (!response.erro) {
-
-                    setMensagem(`⚠️ Usuário '${usuario.login}' já está cadastrado no Siplan!`);
+                    mostrarAlerta(`Usuário '${usuario.login}' já está cadastrado no Siplan!`, 'erro');
                     setCarregando(false);
                     return;
                 } else if (response.erro !== 404) {
@@ -168,25 +176,21 @@ function ConfigurarNovoUsuario() {
             });
 
             const usuarioAtualizado = resposta.data;
-            setMensagem(`✅ ${usuarioAtualizado.login} salvo com sucesso!`);
+            mostrarAlerta(`${usuarioAtualizado.login} salvo com sucesso!`, 'sucesso');
             setUsuario(usuarioAtualizado);
-
 
             await buscarListaEAdicionar(usuarioAtualizado);
 
         } catch (erro) {
-            setMensagem(`❌ Falha: ${erro.response?.data?.message || erro.message}`);
+            mostrarAlerta(`Falha: ${erro.response?.data?.message || erro.message}`, 'erro');
         } finally {
             setCarregando(false);
         }
     };
 
-
     const buscarListaEAdicionar = async (novoUsuario) => {
         try {
             const token = localStorage.getItem('token');
-
-
             const resposta = await axios.get(`http://localhost:8098/usuariosip/usuarioscadastrados`, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 params: {
@@ -198,7 +202,6 @@ function ConfigurarNovoUsuario() {
                     atualizarLotAutomatica: null
                 }
             });
-
 
             const usuariosExistentes = resposta.data.content || [];
             const usuariosAtualizados = [novoUsuario, ...usuariosExistentes.filter(u => u.id !== novoUsuario.id)];
@@ -218,13 +221,11 @@ function ConfigurarNovoUsuario() {
         }
     };
 
-
     const renderizarTodosOsDados = () => {
-
         const chaves = Object.keys(usuario).filter(key => !CHAVES_EXCLUIDAS_DETALHES.includes(key));
 
         if (chaves.length === 0) {
-            return <p className="text-center text-muted">Nenhuma informação simples adicional disponível.</p>;
+            return <p className="text-center text-muted">Nenhuma informação adicional disponível.</p>;
         }
 
         return (
@@ -243,31 +244,34 @@ function ConfigurarNovoUsuario() {
         );
     };
 
-
     return (
         <>
             <Cabecalho />
             <div className="container mt-5 mb-5">
+                {alerta.mostrar && (
+                    <div
+                        className={`alert alert-${alerta.tipo === 'sucesso' ? 'success' : 'danger'} alert-dismissible fade show`}
+                        role="alert"
+                        style={{
+                            position: 'fixed',
+                            top: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 2000,
+                            width: '50%',
+                            maxWidth: '500px'
+                        }}
+                    >
+                        {alerta.mensagem}
+                    </div>
+                )}
                 <div className="row justify-content-center">
                     <div className="col-md-10 col-lg-8">
                         <h3 className="mb-4">Cadastrar Novo Usuário</h3>
-
-                        {mensagem && (
-                            <div className={`alert ${mensagem.includes('sucesso') ? 'alert-success' : 'alert-danger'} fade show`} role="alert">
-                                {mensagem}
-                            </div>
-                        )}
-
-
                         <div className="card shadow-lg mb-4">
-
                             <div className="card-body">
-
-
                                 <h5 className="border-bottom pb-2 mb-3 text-muted">Informações do Funcionário</h5>
                                 {renderizarTodosOsDados()}
-
-
                                 <h5 className="border-bottom pb-2 mb-3 text-primary">Permissões de Acesso</h5>
                                 <div className="row">
                                     {permissoes.map(p => (
@@ -287,8 +291,6 @@ function ConfigurarNovoUsuario() {
                                         </div>
                                     ))}
                                 </div>
-
-
                                 <div className="d-flex justify-content-end mt-4 pt-3 border-top">
                                     <button
                                         type="button"

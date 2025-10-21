@@ -8,7 +8,6 @@ import { AiOutlineDelete } from 'react-icons/ai';
 import { FaCheck, FaTimes } from "react-icons/fa";
 import {
   buscarIndicadores,
-  buscarUsuarios,
   manipularAdicionarIndicador,
   manipularExcluir,
   manipularAlterarPermissao,
@@ -16,7 +15,6 @@ import {
 } from "../../../service/usuariosCadastradosService";
 import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
-
 
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
@@ -33,7 +31,6 @@ function Usuario() {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalElementos, setTotalElementos] = useState(0);
   const [carregando, setCarregando] = useState(true);
-
   const [exibirModalIndicadores, setExibirModalIndicadores] = useState(false);
   const [exibirModalAdicionar, setExibirModalAdicionar] = useState(false);
   const [exibirModalEditar, setExibirModalEditar] = useState(false);
@@ -41,9 +38,7 @@ function Usuario() {
   const [indicadores, setIndicadores] = useState([]);
   const [exibirModalElementos, setExibirModalElementos] = useState(false);
   const [elementosOrganizacionais, setElementosOrganizacionais] = useState([]);
-
   const posicaoRolagem = useRef(0);
-  const [mensagemErro, setMensagemErro] = useState('');
   const [anoOrganograma, setAnoOrganograma] = useState('');
   const [diretoria, setDiretoria] = useState('');
   const [gerencia, setGerencia] = useState('');
@@ -54,20 +49,10 @@ function Usuario() {
   const [opcoesGerencia, setOpcoesGerencia] = useState([]);
   const [indicadoresSelecionados, setIndicadoresSelecionados] = useState([]);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
-  const [alertaSucesso, setAlertaSucesso] = useState(false);
-
+  const [alerta, setAlerta] = useState({ mostrar: false, mensagem: '', tipo: 'sucesso' });
   const [filtroNome, setFiltroNome] = useState('');
   const [permissoesSelecionadas, setPermissoesSelecionadas] = useState([]);
-
-  const [alertaSucessoExclusao, setAlertaSucessoExclusao] = useState(false);
-
-  const mostrarAlertaSucessoExclusao = () => {
-    setAlertaSucessoExclusao(true);
-    setTimeout(() => setAlertaSucessoExclusao(false), 2000);
-  };
-
   const location = useLocation();
-
 
   const permissoesDisponiveis = [
     { key: 'administrador', label: 'Administrador' },
@@ -89,11 +74,11 @@ function Usuario() {
 
   const buscarUsuariosFiltrados = async () => {
     setCarregando(true);
-    setMensagemErro('');
+    setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' });
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setMensagemErro('Token de autenticação não encontrado.');
+        mostrarAlerta('Token de autenticação não encontrado!', 'erro');
         setCarregando(false);
         return;
       }
@@ -103,6 +88,7 @@ function Usuario() {
 
       if (filtroNome.trim()) {
         const url = URL_FILTRO_NOME;
+        console.log('Requisição por nome:', url);
         response = await axios.get(url, {
           headers,
           params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
@@ -123,6 +109,7 @@ function Usuario() {
       } else if (permissoesSelecionadas.length > 0) {
         const params = {};
         permissoesSelecionadas.forEach(p => params[p] = true);
+        console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
         response = await axios.get(URL_FILTRO_PERMISSAO, {
           headers,
           params: { ...params, page: paginaAtual, size: tamanhoPagina }
@@ -132,6 +119,7 @@ function Usuario() {
         setTotalElementos(response.data.totalElements || 0);
 
       } else {
+        console.log('Requisição padrão (sem filtros):', URL_API);
         response = await axios.get(URL_API, {
           headers,
           params: { page: paginaAtual, size: tamanhoPagina }
@@ -142,7 +130,7 @@ function Usuario() {
       }
     } catch (erro) {
       console.error('Erro ao buscar usuários:', erro.response?.data || erro.message);
-      setMensagemErro('Erro ao buscar usuários: ' + (erro.response?.data?.message || 'Tente novamente.'));
+      mostrarAlerta('Erro ao buscar usuários!', 'erro');
       setUsuarios([]);
       setTotalPaginas(0);
       setTotalElementos(0);
@@ -384,7 +372,7 @@ function Usuario() {
     });
   };
 
-  const handleSalvarPermissoes = async () => {
+const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && usuarioEditando) {
       setCarregando(true);
       try {
@@ -401,19 +389,15 @@ function Usuario() {
         };
 
         await axios.post(URL_ATUALIZAR_USUARIO_V2, payload, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
 
         setExibirModalEditar(false);
-        mostrarAlertaSucesso();
-
+        mostrarAlerta('Permissões salvas com sucesso!');
         buscarUsuariosFiltrados();
-
+        
       } catch (erro) {
-        setMensagemErro(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`);
+        mostrarAlerta(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`, 'erro');
       } finally {
         setCarregando(false);
       }
@@ -441,7 +425,7 @@ function Usuario() {
     // Lógica para abrir modal de adicionar elemento
   };
 
-  const handleExcluirUsuario = async (idUsuario) => {
+const handleExcluirUsuario = (idUsuario) => {
     const confirmacao = window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`);
     if (confirmacao) {
       manipularExcluir(
@@ -454,8 +438,7 @@ function Usuario() {
         paginaAtual,
         URL_EXCLUIR_USUARIO
       );
-
-      setTimeout(() => mostrarAlertaSucessoExclusao(), 500);
+      setTimeout(() => mostrarAlerta('Usuário excluído com sucesso!'), 500);
     }
   };
 
@@ -650,10 +633,10 @@ function Usuario() {
   return (
     <>
       <Cabecalho />
-      <div className="container mt-5 mb-3">
-        {alertaSucesso && (
+    <div className="container mt-5 mb-3">
+        {alerta.mostrar && (
           <div
-            className="alert alert-success alert-dismissible fade show"
+            className={`alert alert-${alerta.tipo === 'sucesso' ? 'success' : 'danger'} alert-dismissible fade show`}
             role="alert"
             style={{
               position: 'fixed',
@@ -665,24 +648,7 @@ function Usuario() {
               maxWidth: '500px'
             }}
           >
-            Salvo com sucesso!
-          </div>
-        )}
-        {alertaSucessoExclusao && (
-          <div
-            className="alert alert-success alert-dismissible fade show"
-            role="alert"
-            style={{
-              position: 'fixed',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 2000,
-              width: '50%',
-              maxWidth: '500px'
-            }}
-          >
-            Usuário excluído com sucesso!
+            {alerta.mensagem}
           </div>
         )}
         <div className="row mb-3">
