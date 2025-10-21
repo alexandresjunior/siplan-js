@@ -72,6 +72,11 @@ function Usuario() {
     setPaginaAtual(0);
   };
 
+  const mostrarAlerta = (mensagem, tipo = 'sucesso') => {
+    setAlerta({ mostrar: true, mensagem, tipo });
+    setTimeout(() => setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' }), 3000);
+  };
+
   const buscarUsuariosFiltrados = async () => {
     setCarregando(true);
     setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' });
@@ -280,7 +285,7 @@ function Usuario() {
     setAnoOrganograma('');
     setDiretoria('');
     setGerencia('');
-    setMensagemErro('');
+    setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' }); 
     setOpcoesGerencia([]);
     setOpcoesIndicadores([]);
     setIndicadoresSelecionados([]);
@@ -305,16 +310,12 @@ function Usuario() {
     setUsuarioEditando(null);
   };
 
-  const mostrarAlertaSucesso = () => {
-    setAlertaSucesso(true);
-    setTimeout(() => {
-      setAlertaSucesso(false);
-    }, 2000);
-  };
 
   const handleAdicionarIndicador = async () => {
     if (!anoOrganograma || !diretoria || !gerencia || indicadoresSelecionados.length === 0) {
-      setMensagemErro('Todos os campos obrigatórios devem ser preenchidos e pelo menos um indicador deve ser selecionado.');
+
+      // ✅ COLE:
+      mostrarAlerta('Todos os campos obrigatórios devem ser preenchidos e pelo menos um indicador deve ser selecionado.', 'erro');
       return;
     }
 
@@ -331,7 +332,9 @@ function Usuario() {
         await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
 
-      mostrarAlertaSucesso();
+
+      // ✅ COLE:
+      mostrarAlerta('Indicadores salvos com sucesso!');
 
       fecharModalAdicionar();
       setAnoOrganograma('');
@@ -340,16 +343,16 @@ function Usuario() {
       setOpcoesGerencia([]);
       setOpcoesIndicadores([]);
       setIndicadoresSelecionados([]);
-      setMensagemErro('');
+
     } catch (erro) {
       console.error('Erro ao adicionar indicadores:', erro);
-      setMensagemErro('Falha ao adicionar indicadores. Tente novamente.');
+      // ✅ COLE:
+      mostrarAlerta('Falha ao adicionar indicadores. Tente novamente.', 'erro');
     }
   };
 
   const manipularExcluirIndicador = (idIndicador) => {
     const customConfirm = (message, onConfirm) => {
-
       console.warn(`Confirmação: ${message}. Excluindo indicador ${idIndicador}...`);
       if (true) {
         excluirIndicadorService(
@@ -359,6 +362,8 @@ function Usuario() {
           URL_USUARIO_POR_ID,
           URL_ATUALIZAR_USUARIO
         );
+        // ✅ ADICIONE:
+        mostrarAlerta('Indicador excluído com sucesso!');
       }
     };
     customConfirm(`Tem certeza que deseja excluir o indicador com ID ${idIndicador}?`, () => {
@@ -369,10 +374,12 @@ function Usuario() {
         URL_USUARIO_POR_ID,
         URL_ATUALIZAR_USUARIO
       );
+      // ✅ ADICIONE:
+      mostrarAlerta('Indicador excluído com sucesso!');
     });
   };
 
-const handleSalvarPermissoes = async () => {
+  const handleSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && usuarioEditando) {
       setCarregando(true);
       try {
@@ -395,7 +402,7 @@ const handleSalvarPermissoes = async () => {
         setExibirModalEditar(false);
         mostrarAlerta('Permissões salvas com sucesso!');
         buscarUsuariosFiltrados();
-        
+
       } catch (erro) {
         mostrarAlerta(`Erro ao salvar permissões: ${erro.response?.data?.message || 'Tente novamente'}`, 'erro');
       } finally {
@@ -425,7 +432,7 @@ const handleSalvarPermissoes = async () => {
     // Lógica para abrir modal de adicionar elemento
   };
 
-const handleExcluirUsuario = (idUsuario) => {
+  const handleExcluirUsuario = (idUsuario) => {
     const confirmacao = window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`);
     if (confirmacao) {
       manipularExcluir(
@@ -501,7 +508,6 @@ const handleExcluirUsuario = (idUsuario) => {
   const renderizarFormularioAdicionar = () => {
     return (
       <div className="card-body">
-        {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         <div className="mb-3">
           <select className="form-select" value={anoOrganograma} onChange={(e) => setAnoOrganograma(e.target.value)} required>
             <option value="" disabled>Ano Organograma*</option>
@@ -633,7 +639,7 @@ const handleExcluirUsuario = (idUsuario) => {
   return (
     <>
       <Cabecalho />
-    <div className="container mt-5 mb-3">
+      <div className="container mt-5 mb-3">
         {alerta.mostrar && (
           <div
             className={`alert alert-${alerta.tipo === 'sucesso' ? 'success' : 'danger'} alert-dismissible fade show`}
@@ -688,7 +694,6 @@ const handleExcluirUsuario = (idUsuario) => {
               </div>
             ))}
           </div>
-          {mensagemErro && <div className="alert alert-danger">{mensagemErro}</div>}
         </div>
 
         <div className="card">
