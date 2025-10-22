@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from '../api';
 
 export const buscarUsuarios = async (definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API) => {
   definirCarregando(true);
@@ -9,7 +9,7 @@ export const buscarUsuarios = async (definirCarregando, definirUsuarios, definir
       alert('Você precisa estar logado para acessar esta página.');
       return;
     }
-    const { data: dados } = await axios.get(`${URL_API}?page=${paginaAtual}&size=${tamanhoPagina}&sort=nome,asc`, {
+    const { data: dados } = await api.get(`${URL_API}?page=${paginaAtual}&size=${tamanhoPagina}&sort=nome,asc`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -45,7 +45,7 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
       alert('Você precisa estar logado para acessar esta página.');
       return;
     }
-    const { data: dadosUsuario } = await axios.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+    const { data: dadosUsuario } = await api.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -72,7 +72,7 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
   try {
     const token = localStorage.getItem('token');
 
-    const { data: dadosUsuario } = await axios.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+    const { data: dadosUsuario } = await api.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
 
@@ -92,7 +92,7 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
     const payload = usuarioAtualizado;
 
 
-    const { data: respostaAtualizacao } = await axios.post(URL_ATUALIZAR_USUARIO, { ...payload }, {
+    const { data: respostaAtualizacao } = await api.post(URL_ATUALIZAR_USUARIO, { ...payload }, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
 
@@ -110,13 +110,13 @@ export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioS
 export const manipularExcluirIndicador = async (definirIndicadores, idUsuarioSelecionado, idIndicador, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO) => {
   try {
     const token = localStorage.getItem('token');
-    const { data: dadosUsuario } = await axios.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+    const { data: dadosUsuario } = await api.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     const indicadoresAtualizados = (dadosUsuario.indicadoresLiberados || []).filter(ind => ind.id !== idIndicador);
     const usuarioAtualizado = { ...dadosUsuario, indicadoresLiberados: indicadoresAtualizados };
 
-    const { data: respostaAtualizacao } = await axios.post(URL_ATUALIZAR_USUARIO, usuarioAtualizado, {
+    const { data: respostaAtualizacao } = await api.post(URL_ATUALIZAR_USUARIO, usuarioAtualizado, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     buscarIndicadores(definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID);
@@ -135,7 +135,7 @@ export const buscarPermissoes = async (definirPermissoes, idUsuarioSelecionado, 
       return;
     }
 
-    const { data: dadosUsuario } = await axios.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+    const { data: dadosUsuario } = await api.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
 
@@ -160,7 +160,7 @@ export const manipularAlterarPermissao = async (definirPermissoes, idUsuarioSele
       return;
     }
 
-    const { data: dadosUsuario } = await axios.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
+    const { data: dadosUsuario } = await api.get(`${URL_USUARIO_POR_ID}/${idUsuarioSelecionado}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
 
@@ -176,7 +176,7 @@ export const manipularAlterarPermissao = async (definirPermissoes, idUsuarioSele
     };
 
 
-    const { data: jsonData } = await axios.put(`${URL_ATUALIZAR_USUARIO}/${idUsuarioSelecionado}`, usuarioAtualizado, {
+    const { data: jsonData } = await api.put(`${URL_ATUALIZAR_USUARIO}/${idUsuarioSelecionado}`, usuarioAtualizado, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     await buscarPermissoes(definirPermissoes, idUsuarioSelecionado, URL_USUARIO_POR_ID);
@@ -190,7 +190,7 @@ export const manipularExcluir = async (definirUsuarios, definirPaginaAtual, defi
     try {
       const token = localStorage.getItem('token');
       
-      const resposta = await axios.delete(`${URL_EXCLUIR_USUARIO}/${idUsuario}`, {
+      const resposta = await api.delete(`${URL_EXCLUIR_USUARIO}/${idUsuario}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
 

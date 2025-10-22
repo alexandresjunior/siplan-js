@@ -1,7 +1,7 @@
 import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import React, { useState, useEffect, useRef } from 'react';
-import axios from "axios";
+import api from '../../../api';
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
 import { AiOutlineDelete } from 'react-icons/ai';
@@ -94,7 +94,7 @@ function Usuario() {
       if (filtroNome.trim()) {
         const url = URL_FILTRO_NOME;
         console.log('Requisição por nome:', url);
-        response = await axios.get(url, {
+        response = await api.get(url, {
           headers,
           params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
         });
@@ -115,7 +115,7 @@ function Usuario() {
         const params = {};
         permissoesSelecionadas.forEach(p => params[p] = true);
         console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
-        response = await axios.get(URL_FILTRO_PERMISSAO, {
+        response = await api.get(URL_FILTRO_PERMISSAO, {
           headers,
           params: { ...params, page: paginaAtual, size: tamanhoPagina }
         });
@@ -125,7 +125,7 @@ function Usuario() {
 
       } else {
         console.log('Requisição padrão (sem filtros):', URL_API);
-        response = await axios.get(URL_API, {
+        response = await api.get(URL_API, {
           headers,
           params: { page: paginaAtual, size: tamanhoPagina }
         });
@@ -157,7 +157,7 @@ function Usuario() {
       }
 
       try {
-        const { data: diretoriaText } = await axios.get(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
+        const { data: diretoriaText } = await api.get(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
 
@@ -220,7 +220,7 @@ function Usuario() {
       const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
       const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
 
-      const { data: texto } = await axios.get(url, {
+      const { data: texto } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
@@ -253,7 +253,7 @@ function Usuario() {
 
       const url = `http://localhost:8098/indicador/valores/${elementoId}`;
 
-      const { data } = await axios.get(url, {
+      const { data } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
@@ -395,7 +395,7 @@ function Usuario() {
           administradorRisco: usuarioEditando.administradorRisco
         };
 
-        await axios.post(URL_ATUALIZAR_USUARIO_V2, payload, {
+        await api.post(URL_ATUALIZAR_USUARIO_V2, payload, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
 

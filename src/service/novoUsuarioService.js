@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../api'
 
 const URL_BUSCAR_USUARIO = 'http://localhost:8098/usuariosip/busca/por-login';
 
@@ -7,7 +7,7 @@ export const obterUsuarioPorLogin = async (login) => {
     try {
         const token = localStorage.getItem('token');
         
-        const { data } = await axios.get(URL_BUSCAR_USUARIO, {
+        const { data } = await api.get(URL_BUSCAR_USUARIO, {
             params: {
                 login: login 
             },
