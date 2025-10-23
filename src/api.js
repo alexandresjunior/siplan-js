@@ -51,15 +51,16 @@ api.interceptors.response.use(
 
       const warning = document.createElement('div');
       warning.className = 'alert alert-warning';
-      warning.style.backgroundColor = '#fff240ff';
-      warning.style.color = '#4b4b4bff';
+      warning.style.backgroundColor = '#ffb6b6ff';
+      warning.style.color = '#640000ff';
+      warning.style.borderColor = '#640000ff';
       warning.style.padding = '20px';
       warning.style.borderRadius = '5px';
       warning.style.textAlign = 'center';
       warning.style.fontSize = '15px';
       warning.style.zIndex = '5001';
       warning.style.minWidth = '300px';
-       warning.style.fontFamily = 'Open Sans, sans-serif';
+      warning.style.fontFamily = 'Open Sans, sans-serif';
       warning.innerText = 'Sessão expirada. Faça login novamente. (3)';
 
       overlay.appendChild(warning);
