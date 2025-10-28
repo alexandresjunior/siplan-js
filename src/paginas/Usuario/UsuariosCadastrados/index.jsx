@@ -11,7 +11,7 @@ import {
   manipularExcluir,
   manipularAlterarPermissao,
   manipularExcluirIndicador as excluirIndicadorService
-} from "../../../services/usuariosCadastradosService";
+} from "../../../services/usuariosCadastrados";
 import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import api from "../../../services/api";

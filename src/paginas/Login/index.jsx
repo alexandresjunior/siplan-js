@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import loginService from '../../services/loginService';
+import loginService from '../../services/login';
 import logoSiplan from '../../assets/imagens/siplan_logo.png';
 import logoCompesa from '../../assets/imagens/compesa_logo.png';
 import bgLogin from '../../assets/imagens/bgLogin.png';
