@@ -1,7 +1,6 @@
-import { BrowserRouter, Route, Router, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Dashboard from './paginas/Dashboard';
 import Login from './paginas/Login';
-import './App.css';
 import Indicadores from "./paginas/Cadastros/Indicadores";
 import Usuario from './paginas/Usuario/UsuariosCadastrados';
 import ProtectedRoute from './componentes/ProtecaoDeRota/index';
@@ -10,6 +9,9 @@ import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
 import Objetivos from "./paginas/Cadastros/Objetivos";
 import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
 import CalendarioReunioes from "./paginas/Aderencia/CalendarioReunioes";
+import Comites from "./paginas/Cadastros/Comites";
+import DataFechamento from "./paginas/Aderencia/DataFechamento"; 
+import './App.css';
 
 function App() {
   return (
@@ -71,7 +73,7 @@ function App() {
           path="/cadastros/comites"
           element={
             <ProtectedRoute>
-              <></>
+              <Comites /> 
             </ProtectedRoute>
           }
         />
@@ -155,14 +157,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/aderencia/data-fechamento"
           element={
             <ProtectedRoute>
-              <></>
+              <DataFechamento /> 
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/aderencia/calendario-reunioes"
           element={
