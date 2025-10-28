@@ -1,7 +1,7 @@
 import { FaCircleUser } from "react-icons/fa6";
 import logo from "../../assets/imagens/siplan_logo_azul.png";
 import { useNavigate, Link } from "react-router-dom";
-import loginService from "../../service/loginService";
+import loginService from "../../services/loginService";
 import './estilos.css';
 
 const menuItems = [

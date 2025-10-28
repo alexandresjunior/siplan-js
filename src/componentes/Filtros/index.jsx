@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../service/elementoOrganizacionalService';
+import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../services/elementoOrganizacionalService';
 
 const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
     const [anos, setAnos] = useState([]);
@@ -97,7 +97,7 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
 
 export default Filtros;
 // import React, { useState, useEffect } from 'react';
-// import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../service/elementoOrganizacionalService';
+// import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../services/elementoOrganizacionalService';
 
 // const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
 //     const [anos, setAnos] = useState([]);

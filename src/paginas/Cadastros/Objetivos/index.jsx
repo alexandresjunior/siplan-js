@@ -3,7 +3,7 @@ import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
-import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../service/objetivoService";
+import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../services/objetivoService";
 
 import { FiEdit } from 'react-icons/fi';
 import { AiOutlineDelete } from 'react-icons/ai';

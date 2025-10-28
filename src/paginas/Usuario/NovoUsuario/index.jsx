@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { obterUsuarioPorLogin } from '../../../service/novoUsuarioService';
+import { obterUsuarioPorLogin } from '../../../services/novoUsuarioService';
 import api from '../../../api';
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';

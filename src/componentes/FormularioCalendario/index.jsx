@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from "react-datepicker";
-import { buscarDiretoriasPorAno } from '../../service/elementoOrganizacionalService';
+import { buscarDiretoriasPorAno } from '../../services/elementoOrganizacionalService';
 
 const FormularioCalendario = ({ registro, onFormChange, anos, ciclos }) => {
     const [diretorias, setDiretorias] = useState([]);

@@ -8,7 +8,7 @@ import { AiOutlineDelete } from 'react-icons/ai';
 import { 
     buscarConfiguracoes, criarConfiguracao, atualizarConfiguracao, excluirConfiguracao,
     buscarCiclos, buscarDiretorias
-} from "../../../service/dataFechamentoService";
+} from "../../../services/dataFechamentoService";
 import axios from 'axios';
 
 const URL_API_PAGINADO = 'http://localhost:8098/aderenciaconfiguracao/buscaPaginadaTipoConfiguracao';
