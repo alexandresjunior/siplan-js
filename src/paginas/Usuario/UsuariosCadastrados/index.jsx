@@ -1,7 +1,6 @@
 import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import React, { useState, useEffect, useRef } from 'react';
-import api from '../../../api';
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
 import { AiOutlineDelete } from 'react-icons/ai';
@@ -15,6 +14,7 @@ import {
 } from "../../../services/usuariosCadastradosService";
 import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
+import api from "../../../services/api";
 
 const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
 const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../../../api';
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';
+import api from '../../../services/api';
 
 function ConfigurarNovoUsuario() {
     const location = useLocation();
