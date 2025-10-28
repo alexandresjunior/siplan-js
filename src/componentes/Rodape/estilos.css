@@ -1,0 +1,9 @@
+.link-rodape {
+    text-decoration: none;
+    color: var(--azul-compesa);
+}
+
+.link-rodape:hover {
+    color: #FFF;
+    transition: 0.25s;
+}

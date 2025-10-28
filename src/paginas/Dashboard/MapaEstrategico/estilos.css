@@ -1,0 +1,74 @@
+.text-primary {
+    color: #005daa !important;
+}
+
+.card-missao,
+.card-visao {
+    background: linear-gradient(135deg, #0d6efd, #005daa);
+    border: none;
+    cursor: default;
+}
+
+.secao-titulo {
+    display: inline-block;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.secao-icone-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    color: white;
+}
+
+.card-item {
+    border-left: 4px solid;
+    border-top: 5px solid var(--azul-compesa);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: default;
+}
+
+.card-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    border-top: 5px solid var(--azul-compesa);
+}
+
+.bg-success {
+    background-color: #2e964f !important;
+}
+
+.bg-warning {
+    background-color: #f5a623 !important;
+}
+
+.bg-info {
+    background-color: #4a90e2 !important;
+}
+
+.card-item.border-success {
+    border-left-color: #2e964f;
+}
+
+.card-item.border-warning {
+    border-left-color: #f5a623;
+}
+
+.card-item.border-info {
+    border-left-color: #4a90e2;
+}
+
+.badge-valor {
+    background-color: var(--azul-compesa);
+    border-radius: 4px;
+    font-size: 0.8rem;
+}

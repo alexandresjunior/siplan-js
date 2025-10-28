@@ -1,0 +1,12 @@
+.list-group-item span {
+    font-size: 14px;
+}
+
+li.list-group-item {
+    cursor: pointer;
+}
+
+.selecionado:hover {
+    background-color: rgb(255, 193, 7);
+    color: #000;
+}
