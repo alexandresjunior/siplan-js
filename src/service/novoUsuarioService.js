@@ -1,4 +1,4 @@
-import api from '../api'
+import api from './api'
 
 const URL_BUSCAR_USUARIO = 'http://localhost:8098/usuariosip/busca/por-login';
 

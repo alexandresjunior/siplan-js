@@ -1,4 +1,4 @@
-import api from '../api';
+import api from './api';
 
 export const buscarUsuarios = async (definirCarregando, definirUsuarios, definirTotalPaginas, definirTotalElementos, paginaAtual, tamanhoPagina, URL_API) => {
   definirCarregando(true);
