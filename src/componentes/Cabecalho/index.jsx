@@ -8,6 +8,7 @@ const menuItems = [
     {
         title: "Cadastros",
         links: [
+            { label: "Usuários", path: "/cadastros/usuarioscadastrados" },
             { label: "Indicadores", path: "/cadastros/indicadores" },
             { label: "Valores dos Indicadores", path: "/cadastros/valores-indicadores" },
             { label: "Transferência de Valores", path: "/cadastros/transferencia-valores" },

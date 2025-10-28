@@ -1,0 +1,39 @@
+import api from '../api'; // Importa o Axios configurado com interceptors
+
+async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
+  try {
+    const resposta = await api.post('/authenticate/auth', {
+      login: nomeUsuario,
+      senha,
+    });
+
+    const dados = resposta.data;
+
+    if (dados.sucesso) {
+      localStorage.setItem('token', dados.objeto);
+      navegar('/dashboard');
+    } else {
+      definirErro(dados.mensagem || 'Usuário ou senha inválidos.');
+    }
+  } catch (erro) {
+    console.error('Erro ao autenticar:', erro);
+    if (erro.response) {
+      if (erro.response.status === 401 || erro.response.status === 400) {
+        definirErro('Usuário ou senha inválidos.');
+      } else if (erro.response.data && erro.response.data.mensagem) {
+        definirErro(erro.response.data.mensagem);
+      } else {
+        definirErro('Erro no servidor. Tente novamente mais tarde.');
+      }
+    } else {
+      definirErro('Erro de conexão com o servidor');
+    }
+  }
+}
+
+function realizarLogout(navegar) {
+  localStorage.removeItem('token');
+  navegar('/'); // Redireciona para a tela de login
+}
+
+export default { login: servicoLogin, logout: realizarLogout };
