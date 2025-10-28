@@ -18,10 +18,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rota pública (sem autenticação) */}
+
         <Route path="/" element={<Login />} />
 
-        {/* Rotas protegidas */}
         <Route
           path="/dashboard"
           element={

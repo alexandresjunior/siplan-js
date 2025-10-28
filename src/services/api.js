@@ -1,5 +1,5 @@
 import axios from "axios";
-import { isTokenExpired, getToken } from "../utils/jwtUtils";
+import { tokenEstaExpirado, obterToken } from "../utils/jwtUtils";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BACKEND_URL,
@@ -7,7 +7,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
+    const token = obterToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,12 +21,12 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+
     return response;
   },
   (error) => {
-
-    const token = getToken();
-    if ((token && isTokenExpired(token)) || error.response?.status === 401) {
+    const token = obterToken();
+    if ((token && tokenEstaExpirado(token)) || error.response?.status === 401) {
 
       const overlay = document.createElement("div");
       overlay.style.position = "fixed";
@@ -69,7 +69,6 @@ api.interceptors.response.use(
       }, 1000);
 
       setTimeout(() => {
-        
         if (document.body.contains(overlay)) {
           document.body.removeChild(overlay);
         }

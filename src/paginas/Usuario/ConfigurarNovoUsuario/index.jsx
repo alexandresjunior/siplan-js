@@ -10,12 +10,12 @@ function ConfigurarNovoUsuario() {
 
     const usuarioOriginal = location.state?.usuarioData;
 
-    const getInitialUser = (original) => {
+    const obterUsuarioInicial = (original) => {
         if (!original) return null;
         return { ...original };
     };
 
-    const [usuario, setUsuario] = useState(getInitialUser(usuarioOriginal));
+    const [usuario, setUsuario] = useState(obterUsuarioInicial(usuarioOriginal));
     const [carregando, setCarregando] = useState(false);
     const [alerta, setAlerta] = useState({ mostrar: false, mensagem: '', tipo: 'sucesso' });
 
