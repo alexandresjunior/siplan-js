@@ -10,23 +10,23 @@ async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
     const dados = resposta.data;
 
     if (dados.sucesso) {
-      localStorage.setItem('token', dados.objeto);
-      navegar('/dashboard');
+      localStorage.setItem("token", dados.objeto);
+      navegar("/dashboard");
     } else {
-      definirErro(dados.mensagem || 'Usuário ou senha inválidos.');
+      definirErro(dados.mensagem || "Usuário ou senha inválidos.");
     }
   } catch (erro) {
-    console.error('Erro ao autenticar:', erro);
+    console.error("Erro ao autenticar:", erro);
     if (erro.response) {
       if (erro.response.status === 401 || erro.response.status === 400) {
-        definirErro('Usuário ou senha inválidos.');
+        definirErro("Usuário ou senha inválidos.");
       } else if (erro.response.data && erro.response.data.mensagem) {
         definirErro(erro.response.data.mensagem);
       } else {
-        definirErro('Erro no servidor. Tente novamente mais tarde.');
+        definirErro("Erro no servidor. Tente novamente mais tarde.");
       }
     } else {
-      definirErro('Erro de conexão com o servidor');
+      definirErro("Erro de conexão com o servidor");
     }
   }
 }

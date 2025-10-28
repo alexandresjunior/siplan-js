@@ -3,7 +3,9 @@ import api from "./api";
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   if (!token) {
-    alert("Token de autenticação não encontrado. Por favor, faça o login novamente.");
+    alert(
+      "Token de autenticação não encontrado. Por favor, faça o login novamente."
+    );
     throw new Error("Token não encontrado");
   }
   return {
@@ -12,6 +14,62 @@ const getAuthHeaders = () => {
   };
 };
 
+export const buscarIndicadoresExcluidosPaginados = async (
+  idElementoOrganizacional,
+  pagina,
+  tamanho
+) => {
+  try {
+    const response = await api.get(
+      `/indicador/lixeira/paginados/${idElementoOrganizacional}`,
+      {
+        params: {
+          page: pagina,
+          size: tamanho,
+          sort: "nomeIndicador,asc",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erro ao buscar indicadores excluídos:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || `Erro ao buscar indicadores excluídos.`
+    );
+  }
+};
+
+export const restaurarIndicador = async (idIndicador) => {
+  try {
+    await api.post("/indicador/restaurar", idIndicador);
+  } catch (error) {
+    console.error(
+      "Erro ao restaurar indicador:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message || "Falha ao restaurar o indicador."
+    );
+  }
+};
+
+export const excluirIndicadorPermanentemente = async (idIndicador) => {
+  try {
+    await api.delete(`/indicador/excluirIndicador/${idIndicador}`);
+  } catch (error) {
+    console.error(
+      "Erro ao excluir indicador:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.message ||
+        "Falha ao excluir o indicador permanentemente."
+    );
+  }
+};
 
 export const buscarTiposIndicador = async () => {
   try {
@@ -98,22 +156,6 @@ export const buscarIndicadoresPaginados = async (idUnidade, ano, pagina = 0, tam
   }
 };
 
-export const buscarIndicadoresExcluidosPaginados = async (idElementoOrganizacional, pagina, tamanho) => {
-  try {
-    const response = await api.get(`/indicador/lixeira/paginados/${idElementoOrganizacional}`, {
-      params: {
-        page: pagina,
-        size: tamanho,
-        sort: "nomeIndicador,asc",
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Erro ao buscar lixeira:", error);
-    throw new Error(error.response?.data?.message || "Erro ao buscar indicadores excluídos.");
-  }
-};
-
 
 export const salvarIndicador = async (indicador) => {
   console.log('print de salvar indicador')
@@ -139,25 +181,6 @@ export const excluirIndicadorLogico = async (idIndicador) => {
     throw new Error("Erro ao enviar para lixeira.");
   }
 };
-
-export const restaurarIndicador = async (idIndicador) => {
-  try {
-    await api.post("/indicador/restaurar", idIndicador, { headers: getAuthHeaders() });
-  } catch (error) {
-    console.error("Erro ao restaurar:", error);
-    throw new Error("Falha ao restaurar o indicador.");
-  }
-};
-
-export const excluirIndicadorPermanentemente = async (idIndicador) => {
-  try {
-    await api.delete(`/indicador/excluirIndicador/${idIndicador}`, { headers: getAuthHeaders() });
-  } catch (error) {
-    console.error("Erro ao excluir permanentemente:", error);
-    throw new Error("Falha ao excluir o indicador permanentemente.");
-  }
-};
-
 
 export const buscarVariaveisDoIndicador = async (idIndicador) => {
   try {
