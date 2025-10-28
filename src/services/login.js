@@ -1,8 +1,8 @@
-import api from './api';
+import api from "./api";
 
 async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
   try {
-    const resposta = await api.post('/authenticate/auth', {
+    const resposta = await api.post("/authenticate/auth", {
       login: nomeUsuario,
       senha,
     });
@@ -25,8 +25,6 @@ async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
       } else {
         definirErro("Erro no servidor. Tente novamente mais tarde.");
       }
-    } else {
-      definirErro("Erro de conexão com o servidor");
     }
   }
 }

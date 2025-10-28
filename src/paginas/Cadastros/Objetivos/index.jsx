@@ -105,7 +105,6 @@ function Objetivos() {
             alert('Objetivo removido com sucesso!');
             fecharModais();
             if (objetivos.length === 1 && paginaAtual > 0) {
-<<<<<<< HEAD
               definirPaginaAtual(paginaAtual - 1);
             } else {
               recarregarObjetivos();
@@ -114,16 +113,6 @@ function Objetivos() {
             console.error(error);
             alert(`Não foi possível excluir o objetivo. ${error}`);
           }
-=======
-                definirPaginaAtual(paginaAtual - 1);
-            } else {
-                recarregarObjetivos();
-            }
-        } catch (error) {
-            console.error(error);
-            alert(`Erro ao remover objetivo: ${error.message}`);
-        }
->>>>>>> 852099c (refactor: melhorias de código e mudança para axios)
     };
 
     const handleFormChange = (e) => {

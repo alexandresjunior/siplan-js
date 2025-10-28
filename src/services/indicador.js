@@ -1,4 +1,8 @@
 import api from "./api";
+<<<<<<< HEAD
+=======
+const URL_BASE = "http://localhost:8098/indicador";
+>>>>>>> 3cb7d18 (refactor: melhorias de código e mudança para axios)
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -94,7 +98,11 @@ export const buscarCiclos = async () => {
     const response = await api.get("/indicador/ciclos");
     return response.data;
   } catch (error) {
-    throw new Error("Falha ao buscar ciclos.");
+    console.error(
+      "Erro ao buscar ciclos:",
+      error.response?.data || error.message
+    );
+    throw new Error(error.response?.data?.message || "Falha ao buscar ciclos.");
   }
 };
 
@@ -193,3 +201,4 @@ export const buscarVariaveisDoIndicador = async (idIndicador) => {
     return []
   }
 }
+    

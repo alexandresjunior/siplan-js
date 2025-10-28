@@ -6,8 +6,6 @@ import Modal from '../../../componentes/Modal';
 import Filtros from '../../../componentes/Filtros';
 import InputBuscaIndicador from '../../../componentes/InputBuscaIndicador';
 
-<<<<<<< HEAD
-// ADICIONADO: FaLockOpen
 import { FaEdit, FaTrash, FaPlus, FaLock, FaLockOpen, FaSearch, FaSave, FaCalculator } from 'react-icons/fa';
 
 import {
@@ -29,7 +27,6 @@ import {
 
 function CadastroIndicadores() {
 
-    // ... (Estados, Filtros, Modais, Edição, Listas - MANTIDOS IGUAIS) ...
     const [listaIndicadores, setListaIndicadores] = useState([]);
     const [carregando, setCarregando] = useState(false);
     const [paginaAtual, setPaginaAtual] = useState(0);
@@ -180,70 +177,15 @@ function CadastroIndicadores() {
     const adicionarNaFormula = (v) => setFormulaEmEdicao(p => p + v);
     const adicionarVariavelNaFormula = (v) => setFormulaEmEdicao(p => p + `[${v}]`);
     const limparFormula = () => setFormulaEmEdicao('');
-=======
-import Cabecalho from "../../../componentes/Cabecalho";
-import { Rodape } from "../../../componentes/Rodape";
-
-import './estilos.css'; 
-import SidebarColapsavel from '../../../componentes/SidebarColapsavel';
-import ElementoOrganizacionalMenu from '../../../componentes/ElementoOrganizacionalMenu';
-
-function Indicadores() {
-    const navigate = useNavigate();
-    const [ano, setAno] = useState(2025);
-    const [diretoria, setDiretoria] = useState(null);
-    const [elemento, setElemento] = useState(null);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
-
-    const handleElementoSelecionado = (elementoSelecionado) => {
-        setElemento(elementoSelecionado);
-        setIsSidebarOpen(false);
-    };
-    
-    const handleNovoIndicador = () => {
-        if (elemento) {
-            navigate('/cadastros/cadastro-indicador', { state: { elemento: elemento } });
-        }
-    };
-
-    const sidebarContent = (
-        <ElementoOrganizacionalMenu
-            organogramaSelecionado={ano}
-            diretoriaSelecionada={diretoria}
-            onAnoOrganogramaSelecionado={setAno}
-            onDiretoriaSelecionada={setDiretoria}
-            onElementoSelecionado={handleElementoSelecionado}
-        />
-    );
->>>>>>> 852099c (refactor: melhorias de código e mudança para axios)
 
     return (
         <div className='d-flex flex-column min-vh-100'>
             <Cabecalho />
-<<<<<<< HEAD
             <main className='flex-grow-1'>
                 <div className="container mt-5 mb-5">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h3 className="fw-bold text-primary">Cadastro de Indicadores</h3>
                         <button className="btn btn-warning fw-bold text-dark d-flex align-items-center" onClick={handleNovoIndicador}><FaPlus className="me-2" /> Novo Indicador</button>
-=======
-            
-            <div className="container flex-grow-1 my-4">
-                <SidebarColapsavel
-                    isOpen={isSidebarOpen}
-                    onToggle={toggleSidebar}
-                    botaoLabel="Exibir Estrutura Organizacional"
-                    sidebarContent={sidebarContent}
-                />
-                
-                <main className={`content-area ${isSidebarOpen ? 'content-area-pushed' : ''}`}>
-                    <div className="div-unidade mb-3">
-                        <h4 className="text-primary">{elemento?.descricao || 'Nenhuma unidade selecionada'}</h4>
->>>>>>> 852099c (refactor: melhorias de código e mudança para axios)
                     </div>
                     <div className="mb-4">
                         <Filtros onUnidadeChange={setFiltroUnidade} onAnoChange={setAnoSelecionado} setCarregandoFiltros={setCarregandoFiltros} />
@@ -294,7 +236,6 @@ function Indicadores() {
                                                         </button>
                                                         {/* ----------------------------------- */}
 
-<<<<<<< HEAD
                                                         <button className="btn btn-sm btn-link text-primary me-1" onClick={() => handleEditar(ind)}><FaEdit size={18} /></button>
                                                         <button className="btn btn-sm btn-link text-danger" onClick={() => { setItemEmEdicao(ind); setModalExclusaoAberto(true); }}><FaTrash size={16} /></button>
                                                     </td>
@@ -305,19 +246,6 @@ function Indicadores() {
                                 </table>
                             </div>
                             {totalElementos > 0 && !carregando && (<div className="p-3"><Pagination estilos="d-flex justify-content-between align-items-center" pagina={paginaAtual} definirPagina={setPaginaAtual} tamanho={tamanhoPagina} definirTamanho={setTamanhoPagina} totalPaginas={totalPaginas} totalElementos={totalElementos} opcoesPagina={[10, 20, 40]} /></div>)}
-=======
-                    <div className="card shadow-sm">
-                        <div className="card-header">
-                            <h5>Indicadores da Unidade</h5>
-                        </div>
-                        <div className="card-body">
-                            <p>Tabela de indicadores será exibida aqui.</p>
-                            {elemento && 
-                                <p className="text-muted">
-                                    A tabela deve ser filtrada pela unidade: <strong>{elemento.descricao}</strong>
-                                </p>
-                            }
->>>>>>> 852099c (refactor: melhorias de código e mudança para axios)
                         </div>
                     </div>
                 </div>

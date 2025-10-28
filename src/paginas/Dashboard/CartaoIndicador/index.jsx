@@ -103,6 +103,7 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
     ];
 
     return (
+<<<<<<< HEAD
         <>
             <div className="kpi-card position-relative">
                 {/* Header com título + ícone ao lado */}
@@ -127,6 +128,14 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                         </div>
 
                         {data.descricao && <small className="text-muted d-block mt-2">{data.descricao}</small>}
+=======
+        <div className="kpi-card">
+            <div className="card-header">
+                <div className="mb-3">
+                    <div className="d-flex align-items-center mb-2">
+                        <FaArrowCircleUp size={20} className="arrow-primary me-2" />
+                        <h3 className="h5 text-primary mb-0">{titulo}</h3>
+>>>>>>> 3cb7d18 (refactor: melhorias de código e mudança para axios)
                     </div>
                 </div>
 
