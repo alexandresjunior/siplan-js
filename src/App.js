@@ -7,6 +7,9 @@ import Usuario from './paginas/Usuario/UsuariosCadastrados';
 import ProtectedRoute from './componentes/ProtecaoDeRota/index';
 import NovoUsuario from "./paginas/Usuario/NovoUsuario";
 import ConfigurarNovoUsuario from "./paginas/Usuario/ConfigurarNovoUsuario";
+import Objetivos from "./paginas/Cadastros/Objetivos";
+import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
+import CalendarioReunioes from "./paginas/Aderencia/CalendarioReunioes";
 
 function App() {
   return (
@@ -76,7 +79,7 @@ function App() {
           path="/cadastros/objetivos"
           element={
             <ProtectedRoute>
-              <></>
+              <Objetivos />
             </ProtectedRoute>
           }
         />
@@ -124,7 +127,7 @@ function App() {
           path="/configuracoes/lixeira-indicadores"
           element={
             <ProtectedRoute>
-              <></>
+              <LixeiraIndicadores />
             </ProtectedRoute>
           }
         />
@@ -164,7 +167,7 @@ function App() {
           path="/aderencia/calendario-reunioes"
           element={
             <ProtectedRoute>
-              <></>
+              <CalendarioReunioes/>
             </ProtectedRoute>
           }
         />
