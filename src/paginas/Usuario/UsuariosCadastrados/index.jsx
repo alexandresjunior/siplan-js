@@ -7,9 +7,8 @@ import { AiOutlineDelete } from 'react-icons/ai';
 import { FaCheck, FaTimes } from "react-icons/fa";
 import {
   buscarIndicadores,
-  manipularAdicionarIndicador,
+  adicionarIndicadorLiberado,
   manipularExcluir,
-  manipularAlterarPermissao,
   manipularExcluirIndicador as excluirIndicadorService
 } from "../../../services/usuarios";
 import { Link } from "react-router-dom";
@@ -327,7 +326,7 @@ function Usuario() {
           usuarioId: idUsuarioSelecionado,
           indicadorId: parseInt(indicadorId)
         };
-        await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
+        await adicionarIndicadorLiberado(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
 
       mostrarAlerta('Indicadores salvos com sucesso!');

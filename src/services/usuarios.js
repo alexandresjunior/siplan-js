@@ -66,7 +66,7 @@ export const buscarIndicadores = async (definirIndicadores, idUsuarioSelecionado
   }
 };
 
-export const manipularAdicionarIndicador = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador, callbackSucesso) => {
+export const adicionarIndicadorLiberado = async (definirIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, novoIndicador, callbackSucesso) => {
   try {
     const token = localStorage.getItem('token');
 
