@@ -10,18 +10,7 @@ export const buscarObjetivosPaginados = async (paginaAtual, tamanhoPagina) => {
       },
     });
 
-    const contentFormatado = response.data.content.map((objetivo) => ({
-      ...objetivo,
-
-      dataCriacao: objetivo.dataCriacao
-        ? new Date(objetivo.dataCriacao).toLocaleDateString("pt-BR")
-        : null,
-    }));
-
-    return {
-      ...response.data,
-      content: contentFormatado,
-    };
+    return response.data;
   } catch (error) {
     console.error(
       "Erro ao carregar objetivos:",
@@ -36,7 +25,14 @@ export const buscarObjetivosPaginados = async (paginaAtual, tamanhoPagina) => {
 
 export const criarObjetivo = async (novoObjetivo) => {
   try {
-    const response = await api.post("/objetivo", novoObjetivo);
+    const agora = new Date();
+    const payload = {
+      nome: novoObjetivo.nome,
+      descricao: novoObjetivo.descricao,
+      dataCriacao: agora.toISOString(),
+      ano: agora.getFullYear(),
+    };
+    const response = await api.post("/objetivo", payload);
     return response.data;
   } catch (error) {
     console.error(
@@ -51,10 +47,8 @@ export const criarObjetivo = async (novoObjetivo) => {
 
 export const editarObjetivo = async (objetivoAtualizado) => {
   try {
-    const payload = { ...objetivoAtualizado };
-    delete payload.dataCriacao;
+    const response = await api.put("/objetivo", objetivoAtualizado);
 
-    const response = await api.put("/objetivo", payload);
     return response.data;
   } catch (error) {
     console.error(
@@ -77,7 +71,7 @@ export const excluirObjetivo = async (idObjetivo) => {
       error.response?.data || error.message
     );
     throw new Error(
-      error.response?.data?.message || "Falha ao excluir o objetivo."
+      error.response?.data
     );
   }
 };

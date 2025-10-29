@@ -53,7 +53,7 @@ function Objetivos() {
 
 
     const abrirModalNovo = () => {
-        definirObjetivoSelecionado({ nome: '', descricao: '' });
+        definirObjetivoSelecionado({ nome: '', descricao: '', dataCriacao: null });
         definirExibirModalNovo(true);
     };
 
@@ -105,14 +105,14 @@ function Objetivos() {
             alert('Objetivo removido com sucesso!');
             fecharModais();
             if (objetivos.length === 1 && paginaAtual > 0) {
-                definirPaginaAtual(paginaAtual - 1);
+              definirPaginaAtual(paginaAtual - 1);
             } else {
-                recarregarObjetivos();
+              recarregarObjetivos();
             }
-        } catch (error) {
+          } catch (error) {
             console.error(error);
-            alert(`Erro ao remover objetivo: ${error.message}`);
-        }
+            alert(`Não foi possível excluir o objetivo. ${error}`);
+          }
     };
 
     const handleFormChange = (e) => {
@@ -131,7 +131,9 @@ function Objetivos() {
         return objetivos.map(objetivo => (
             <tr key={objetivo.id} className="border-bottom">
                 <td className="py-2 px-3">{objetivo.nome}</td>
-                <td className="py-2 px-3 text-center">{objetivo.dataCriacao}</td>
+                <td className="py-2 px-3 text-center">{objetivo.dataCriacao
+                    ? new Date(objetivo.dataCriacao).toLocaleDateString("pt-BR")
+                    : '---'}</td>
                 <td className="px-3 text-center">
                     <div className="dropdown">
                         <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}>
