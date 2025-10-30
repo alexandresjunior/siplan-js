@@ -15,13 +15,13 @@ import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import api from "../../../services/api";
 
-const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
-const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
-const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
-const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
-const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/filtro/porNome';
-const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
-const URL_ATUALIZAR_USUARIO_V2 = 'http://localhost:8098/usuariosip/atualizarUsuarioV2';
+const URL_API = '/usuariosip/usuarioscadastrados';
+const URL_ATUALIZAR_USUARIO = '/usuariosip/atualizarUsuario';
+const URL_USUARIO_POR_ID = '/usuariosip/obterporid';
+const URL_EXCLUIR_USUARIO = '/usuariosip';
+const URL_FILTRO_NOME = '/usuariosip/filtro/porNome';
+const URL_FILTRO_PERMISSAO = '/usuariosip/filtro/porPermissao';
+const URL_ATUALIZAR_USUARIO_V2 = '/usuariosip/atualizarUsuarioV2';
 
 function Usuario() {
   const [usuarios, setUsuarios] = useState([]);
@@ -155,7 +155,7 @@ function Usuario() {
       }
 
       try {
-        const { data: diretoriaText } = await api.get(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
+        const { data: diretoriaText } = await api.get(`/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
 
@@ -216,7 +216,7 @@ function Usuario() {
       const token = localStorage.getItem('token');
       const diretoriaSelecionada = opcoesDiretoria.find(d => d.id === diretoria);
       const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
-      const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
+      const url = `/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
 
       const { data: texto } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -249,7 +249,7 @@ function Usuario() {
         throw new Error('ID do elemento organizacional não é um número válido');
       }
 
-      const url = `http://localhost:8098/indicador/valores/${elementoId}`;
+      const url = `/indicador/valores/${elementoId}`;
 
       const { data } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

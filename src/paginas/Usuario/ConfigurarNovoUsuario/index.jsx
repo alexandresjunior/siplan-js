@@ -142,7 +142,7 @@ function ConfigurarNovoUsuario() {
         try {
             if (!usuario.id) {
                 const token = localStorage.getItem('token');
-                const response = await api.get(`http://localhost:8098/usuariosip/obterporlogin/${usuario.login}`, {
+                const response = await api.get(`/usuariosip/obterporlogin/${usuario.login}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(erro => {
                     return { erro: erro.response?.status };
@@ -171,7 +171,7 @@ function ConfigurarNovoUsuario() {
             delete usuarioDTO.usuarioComum;
 
             const token = localStorage.getItem('token');
-            const resposta = await api.post(`http://localhost:8098/usuariosip/atualizarUsuarioV2`, usuarioDTO, {
+            const resposta = await api.post(`/usuariosip/atualizarUsuarioV2`, usuarioDTO, {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
 
@@ -191,7 +191,7 @@ function ConfigurarNovoUsuario() {
     const buscarListaEAdicionar = async (novoUsuario) => {
         try {
             const token = localStorage.getItem('token');
-            const resposta = await api.get(`http://localhost:8098/usuariosip/usuarioscadastrados`, {
+            const resposta = await api.get(`/usuariosip/usuarioscadastrados`, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 params: {
                     page: 0,

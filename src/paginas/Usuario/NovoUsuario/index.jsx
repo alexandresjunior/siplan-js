@@ -19,7 +19,7 @@ function NovoUsuario() {
   const verificarUsuarioCadastrado = async (login) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await api.get('http://localhost:8098/usuariosip/usuarioscadastrados', {
+      const response = await api.get('/usuariosip/usuarioscadastrados', {
         headers: { 'Authorization': `Bearer ${token}` },
         params: { page: 0, size: 1000 }
       });
