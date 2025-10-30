@@ -45,7 +45,9 @@ export const buscarIndicadoresExcluidosPaginados = async (
 
 export const restaurarIndicador = async (idIndicador) => {
   try {
-    await api.post("/indicador/restaurar", idIndicador);
+    await api.post("/indicador/restaurar", idIndicador, {
+      headers: getAuthHeaders()
+    });
   } catch (error) {
     console.error(
       "Erro ao restaurar indicador:",
@@ -59,7 +61,10 @@ export const restaurarIndicador = async (idIndicador) => {
 
 export const excluirIndicadorPermanentemente = async (idIndicador) => {
   try {
-    await api.delete(`/indicador/excluirIndicador/${idIndicador}`);
+    await api.delete(`/indicador/excluirIndicador/${idIndicador}`, {
+      headers: getAuthHeaders()
+    }
+    );
   } catch (error) {
     console.error(
       "Erro ao excluir indicador:",
