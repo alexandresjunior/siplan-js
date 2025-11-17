@@ -7,6 +7,7 @@ import GraficoIndicador from '../GraficoIndicador';
 import Modal from '../../../componentes/Modal';
 import './estilos.css';
 import { useState } from 'react';
+import api from '../../../services/api'; // ADICIONE ESTA LINHA
 
 const getStatusIcon = (value) => {
     if (value < 95) return closeIcon;
@@ -19,9 +20,10 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
     const [data, setData] = useState(initialData);
     const [modalAberto, setModalAberto] = useState(false);
     const [formData, setFormData] = useState({});
+    const [carregando, setCarregando] = useState(false); // NOVA
 
-    const { titulo, subtitulo, meta, teto, real, kpi, metaUnidade } = data;
-    const iconSrc = getStatusIcon(kpi);
+    const { id } = data;
+    const iconSrc = getStatusIcon(data.kpi);
 
     // Abre modal e carrega dados atuais
     const abrirModal = () => {
@@ -55,18 +57,46 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
         });
     };
 
-    // Salva e atualiza cartão
-    const salvar = () => {
-        const dadosAtualizados = {
-            ...data,
-            ...formData,
-            kpi: formData.kpi || 0,
-        };
-        setData(dadosAtualizados);
-        onSalvar?.(dadosAtualizados); // opcional: passa pro Dashboard
-        setModalAberto(false);
-    };
+    // FUNÇÃO SALVAR COM BACKEND
+    const salvar = async () => {
+        if (!id) {
+            alert("Cartão sem ID — não pode salvar");
+            return;
+        }
 
+        setCarregando(true);
+
+        try {
+            // payload tem que estar DENTRO do try
+            const payload = {
+                valorIndicador: formData.teto !== undefined ? formData.teto : formData.meta,
+                real: formData.real
+            };
+
+            const response = await api.put(`/dashboard/atualizarCartao/${id}`, payload);
+            const dadosDoBackend = response.data;
+
+            // Reconstrói teto/meta corretamente
+            const dadosAtualizados = {
+                ...data,
+                ...dadosDoBackend,
+                ...(data.teto !== undefined && { teto: dadosDoBackend.valorIndicador }),
+                ...(data.meta !== undefined && { meta: dadosDoBackend.valorIndicador }),
+                real: dadosDoBackend.real,
+                kpi: dadosDoBackend.kpi
+            };
+
+            setData(dadosAtualizados);
+            onSalvar?.(dadosAtualizados);
+            setModalAberto(false);
+
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+            alert("Erro ao salvar no servidor");
+        } finally {
+            setCarregando(false);
+        }
+    };
     const botoesModal = [
         { texto: 'Sair', variante: 'secondary', aoClicar: () => setModalAberto(false) },
         { texto: 'Salvar', variante: 'primary', aoClicar: salvar },
@@ -85,7 +115,7 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                             {/* Título + ícone (em um bloco que cresce, mas não empurra) */}
                             <div className="d-flex align-items-center gap-2 flex-grow-1 min-width-0">
                                 <h3 className="h5 text-primary mb-0 text-truncate">
-                                    {titulo}
+                                    {data.nome}
                                 </h3>
                                 <img
                                     src={iconSrc}
@@ -96,7 +126,7 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                             </div>
                         </div>
 
-                        {subtitulo && <small className="text-muted d-block mt-2">{subtitulo}</small>}
+                        {data.descricao && <small className="text-muted d-block mt-2">{data.descricao}</small>}
                     </div>
                 </div>
 
@@ -105,7 +135,7 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                     onClick={abrirModal}
                     className="btn btn-primary btn-sm position-absolute"
                     style={{
-                        top: '1.10rem',   // descido para alinhar com o ícone (ajuste fino)
+                        top: '1.0rem',   // descido para alinhar com o ícone (ajuste fino)
                         right: '0.75rem',
                         whiteSpace: 'nowrap'
                     }}
@@ -115,32 +145,33 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
 
                 {/* Corpo do cartão – altura fixa para o gráfico */}
                 <div className="card-body" style={{ minHeight: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <GraficoIndicador value={kpi} />
+                    <GraficoIndicador value={data.kpi} />
                 </div>
 
                 <div className="card-footer">
                     <div className="kpi-value">
-                        <span className="label">{teto ? 'TETO' : 'META'}</span>
-                        <span className="value">{teto || meta}</span>
+                        <span className="label">{data.teto ? 'TETO' : 'META'}</span>
+                        <span className="value">{data.teto || data.meta}</span>
                     </div>
                     <div className="kpi-value">
                         <span className="label">REAL</span>
-                        <span className="value">{real}</span>
+                        <span className="value">{data.real}</span>
                     </div>
                 </div>
 
-                {metaUnidade && <p className="kpi-unidade">{metaUnidade}</p>}
+                {data.metaUnidade && <p className="kpi-unidade">{data.metaUnidade}</p>}
             </div>
             {/* Modal de Edição – botões no canto superior direito, lado a lado */}
             <Modal
                 estaAberto={modalAberto}
                 aoFechar={() => setModalAberto(false)}
-                titulo={`${titulo}`}
+                titulo={`${data.nome}`}
                 botoesAcao={[
                     {
-                        label: 'Salvar',
+                        label: carregando ? 'Salvando...' : 'Salvar',
                         className: 'btn btn-primary',
-                        onClick: salvar
+                        onClick: salvar,
+                        disabled: carregando
                     },
                     {
                         label: 'Sair',
