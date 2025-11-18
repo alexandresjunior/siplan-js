@@ -3,28 +3,37 @@ import Cabecalho from "../../componentes/Cabecalho";
 import { Rodape } from "../../componentes/Rodape";
 import CartaoIndicador from "./CartaoIndicador";
 import MapaEstrategico from "./MapaEstrategico";
-import api from "../../services/api"; // <-- IMPORTANTE
+import api from "../../services/api";
 import './estilos.css';
+
+// SUBSTITUA a função formatarPeriodo inteira por esta:
+const formatarPeriodo = (listaCartoes, tipo) => {
+  if (!listaCartoes || listaCartoes.length === 0) {
+    return tipo === 'mensal' ? 'Mensal' : 'Acumulado';
+  }
+
+  const periodoFormatado = listaCartoes[0].periodo;
+
+  if (!periodoFormatado) {
+    return tipo === 'mensal' ? 'Mensal' : 'Acumulado';
+  }
+
+  // Só adiciona o prefixo "Mensal" ou "Acumulado" antes do período que já vem bonito
+  return `${tipo === 'mensal' ? 'Mensal' : 'Acumulado'} (${periodoFormatado})`;
+};
 
 export function Dashboard() {
   const [abaAtiva, setAbaAtiva] = useState('mensal');
-
-  // Estado único para os cartões (carregado do backend)
   const [cartoes, setCartoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
-  // Carrega os cartões do backend (só uma vez ou quando precisar)
   const carregarCartoes = async () => {
     try {
       setCarregando(true);
       const response = await api.get('/dashboard/listarCartoes');
 
-      // TRANSFORMA valorIndicador → meta ou teto (pra manter compatibilidade com seu modal)
       const cartoesFormatados = response.data.map(cartao => {
-        // Decida se é teto ou meta (você pode ter um campo tipoIndicador no banco)
-        // Por enquanto, vamos assumir que se tipoIndicador for "TETO" → teto, senão → meta
         const ehTeto = cartao.tipoIndicador === 'TETO';
-
         return {
           ...cartao,
           teto: ehTeto ? cartao.valorIndicador : undefined,
@@ -41,20 +50,55 @@ export function Dashboard() {
     }
   };
 
-  // Carrega ao montar o componente
   useEffect(() => {
     carregarCartoes();
   }, []);
 
-  // Função que o CartaoIndicador chama quando salva
   const aoAtualizarCartao = (cartaoAtualizado) => {
     setCartoes(prev => prev.map(c =>
       c.id === cartaoAtualizado.id ? cartaoAtualizado : c
     ));
   };
 
-  // Dados da aba atual (usa o mesmo array para mensal e acumulado por enquanto)
-  const cartoesAtivos = cartoes;
+  // Separação por tipoPeriodo
+  const cartoesMensal = cartoes.filter(c => c.tipoPeriodo?.toUpperCase() === 'MENSAL');
+  const cartoesAcumulado = cartoes.filter(c => c.tipoPeriodo?.toUpperCase() === 'ACUMULADO');
+
+  const cartoesAtivos = abaAtiva === 'mensal' ? cartoesMensal : cartoesAcumulado;
+
+  // Título dinâmico baseado no período real
+  const tituloAba = abaAtiva === 'mensal'
+    ? formatarPeriodo(cartoesMensal, 'mensal')
+    : formatarPeriodo(cartoesAcumulado, 'acumulado');
+
+  // Extrai o número do ciclo com base no mês do cartão Mensal
+  const obterCicloAtual = () => {
+    const cartaoMensal = cartoes.find(c =>
+      c.tipoPeriodo?.toUpperCase() === 'MENSAL' && c.periodo
+    );
+
+    if (!cartaoMensal || !cartaoMensal.periodo) {
+      return 'Ciclo'; // fallback se não tiver mensal ainda
+    }
+
+    const periodo = cartaoMensal.periodo; // ex: "Novembro/2025"
+    const mesTexto = periodo.split('/')[0].trim(); // pega só "Novembro"
+
+    const meses = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril',
+      'Maio', 'Junho', 'Julho', 'Agosto',
+      'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
+    const indiceMes = meses.findIndex(m =>
+      m.toUpperCase() === mesTexto.toUpperCase()
+    );
+
+    if (indiceMes === -1) return 'Ciclo';
+
+    const numeroCiclo = indiceMes + 1;
+    return `${numeroCiclo}º Ciclo`;
+  };
 
   return (
     <>
@@ -62,11 +106,11 @@ export function Dashboard() {
 
       <section className="container" id="dashboard">
         <div className="pt-3 pb-5">
-          <h1 className="text-primary mb-4">Plano de Metas (7º Ciclo)</h1>
-
+          <h1 className="text-primary mb-4">
+            Plano de Metas ({obterCicloAtual()})
+          </h1>
           {/* Abas */}
           <ul className="nav nav-tabs nav-fill mb-4" role="tablist">
-            {/* ... suas abas iguais ... */}
             <li className="nav-item" role="presentation">
               <button
                 className={`nav-link fw-semibold ${abaAtiva === 'mensal' ? 'active bg-primary text-white border-primary' : 'text-primary'}`}
@@ -94,22 +138,25 @@ export function Dashboard() {
           </ul>
 
           <div className="tab-content">
-            {/* Aba Mensal e Acumulado (mesma fonte de dados) */}
             {(abaAtiva === 'mensal' || abaAtiva === 'acumulado') && (
               <div className="tab-pane fade show active">
                 <h2 className="text-primary mb-3">
-                  {abaAtiva === 'mensal' ? 'Mensal (Julho/2025)' : 'Acumulado (Janeiro-Julho/2025)'}
+                  {tituloAba}
                 </h2>
 
                 {carregando ? (
-                  <p>Carregando cartões...</p>
+                  <p className="text-center">Carregando cartões...</p>
+                ) : cartoesAtivos.length === 0 ? (
+                  <p className="text-center text-muted">
+                    Nenhum cartão {abaAtiva === 'mensal' ? 'mensal' : 'acumulado'} cadastrado.
+                  </p>
                 ) : (
                   <div className="kpi-grid">
                     {cartoesAtivos.map(kpi => (
                       <CartaoIndicador
                         key={kpi.id}
                         data={kpi}
-                        onSalvar={aoAtualizarCartao}  // <-- recebe atualização
+                        onSalvar={aoAtualizarCartao}
                       />
                     ))}
                   </div>
@@ -117,7 +164,6 @@ export function Dashboard() {
               </div>
             )}
 
-            {/* Aba Mapa */}
             {abaAtiva === 'mapa' && (
               <div className="tab-pane fade show active">
                 <MapaEstrategico />
