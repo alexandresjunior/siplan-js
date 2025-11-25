@@ -10,8 +10,9 @@ import Objetivos from "./paginas/Cadastros/Objetivos";
 import LixeiraIndicadores from "./paginas/Configuracoes/LixeiraIndicadores";
 import CalendarioReunioes from "./paginas/Aderencia/CalendarioReunioes";
 import Comites from "./paginas/Cadastros/Comites";
-import DataFechamento from "./paginas/Aderencia/DataFechamento"; 
+import DataFechamento from "./paginas/Aderencia/DataFechamento";
 import './App.css';
+import TransferenciaValores from "./paginas/TransferenciaValores";
 
 function App() {
   return (
@@ -57,7 +58,7 @@ function App() {
           path="/cadastros/transferencia-valores"
           element={
             <ProtectedRoute>
-              <></>
+              <TransferenciaValores/>
             </ProtectedRoute>
           }
         />
@@ -73,7 +74,7 @@ function App() {
           path="/cadastros/comites"
           element={
             <ProtectedRoute>
-              <Comites /> 
+              <Comites />
             </ProtectedRoute>
           }
         />
@@ -162,7 +163,7 @@ function App() {
           path="/aderencia/data-fechamento"
           element={
             <ProtectedRoute>
-              <DataFechamento /> 
+              <DataFechamento />
             </ProtectedRoute>
           }
         />
@@ -171,7 +172,7 @@ function App() {
           path="/aderencia/calendario-reunioes"
           element={
             <ProtectedRoute>
-              <CalendarioReunioes/>
+              <CalendarioReunioes />
             </ProtectedRoute>
           }
         />
@@ -184,6 +185,7 @@ function App() {
           path="/cadastros/configurar-usuario"
           element={<ConfigurarNovoUsuario />}
         />
+
 
       </Routes>
     </BrowserRouter>
