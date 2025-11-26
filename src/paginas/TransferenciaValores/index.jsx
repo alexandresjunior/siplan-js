@@ -88,7 +88,7 @@ function TransferenciaValores() {
                 const indicadores = response.data || [];
 
                 setIndicadoresDisponiveis(indicadores);
-                setIndicadorSelecionado(''); 
+                setIndicadorSelecionado('');
             } catch (error) {
                 console.error('Erro ao carregar indicadores transferíveis:', error);
                 alert('Não foi possível carregar os indicadores desta unidade.');
@@ -99,7 +99,7 @@ function TransferenciaValores() {
         };
 
         carregarIndicadoresTransferiveis();
-    }, [deId]); 
+    }, [deId]);
 
     const selecionarUnidade = (unidade, tipo) => {
         const texto = unidade.descricao || `${unidade.sigla} - ${unidade.nome}`;
@@ -116,23 +116,41 @@ function TransferenciaValores() {
     };
 
     const handleSalvar = async () => {
-        if (!deId || !paraId || !indicadorSelecionado) return alert('Preencha todos os campos.');
-        if (deId === paraId) return alert('Origem e destino devem ser diferentes.');
+        if (!deId || !paraId || !indicadorSelecionado) {
+            return alert('Preencha todos os campos obrigatórios.');
+        }
+        if (deId === paraId) {
+            return alert('Origem e destino devem ser diferentes.');
+        }
 
         try {
-            await api.post('/sua-rota-transferencia', { // AJUSTAR PARA A ROTA DE TRANSFERÊNCIA REAL
-                indicadorId: indicadorSelecionado,
-                origemId: deId,
-                destinoId: paraId
-            });
-            alert('Transferência realizada com sucesso!');
-            setDeId(''); setDeTexto(''); setParaId(''); setParaTexto('');
-            setIndicadorSelecionado(''); setIndicadoresDisponiveis([]);
-        } catch (err) {
-            alert('Erro ao salvar transferência.');
+            // PAYLOAD CORRETO → LISTA COM OBJETO NO FORMATO DO DTO Transferencia
+            const payload = [
+                {
+                    indicadorDe: { id: indicadorSelecionado },
+                    indicadorPara: { id: indicadorSelecionado }, // mesmo indicador!
+                    elementoOrganizacionalDe: { id: deId },
+                    elementoOrganizacionalPara: { id: paraId }
+                }
+            ];
+
+            await api.post('/indicador/transferir', payload);
+
+            alert('Valores copiados com sucesso para a unidade de destino!');
+
+            // Reset dos campos
+            setDeId('');
+            setDeTexto('');
+            setParaId('');
+            setParaTexto('');
+            setIndicadorSelecionado('');
+            setIndicadoresDisponiveis([]);
+
+        } catch (error) {
+            console.error('Erro ao copiar valores:', error);
+            alert('Erro ao copiar os valores. Verifique os dados e tente novamente.');
         }
     };
-
     return (
         <>
             <Cabecalho />
@@ -242,31 +260,31 @@ function TransferenciaValores() {
                                         ))}
                                     </select>
                                 </div>
-                                 <div className="position-absolute end-0 bottom-0 mb-3 me-5">
-                                        <button
-                                            onClick={handleSalvar}
-                                            disabled={!deId || !paraId || !indicadorSelecionado}
-                                            className="btn btn-primary btn-md fw-semibold"
-                                            style={{
-                                                backgroundColor: 'var(--azul-compesa)',
-                                                borderColor: 'var(--azul-compesa)',
-                                                minWidth: '150px'
+                                <div className="position-absolute end-0 bottom-0 mb-3 me-5">
+                                    <button
+                                        onClick={handleSalvar}
+                                        disabled={!deId || !paraId || !indicadorSelecionado}
+                                        className="btn btn-primary btn-md fw-semibold"
+                                        style={{
+                                            backgroundColor: 'var(--azul-compesa)',
+                                            borderColor: 'var(--azul-compesa)',
+                                            minWidth: '150px'
 
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (deId && paraId && indicadorSelecionado) {
-                                                    e.target.style.backgroundColor = 'var(--verde-compesa)';
-                                                    e.target.style.borderColor = 'var(--verde-compesa)';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.target.style.backgroundColor = 'var(--azul-compesa)';
-                                                e.target.style.borderColor = 'var(--azul-compesa)';
-                                            }}
-                                        >
-                                            Salvar Transferência
-                                        </button>
-                                    </div>
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (deId && paraId && indicadorSelecionado) {
+                                                e.target.style.backgroundColor = 'var(--verde-compesa)';
+                                                e.target.style.borderColor = 'var(--verde-compesa)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'var(--azul-compesa)';
+                                            e.target.style.borderColor = 'var(--azul-compesa)';
+                                        }}
+                                    >
+                                        Salvar Transferência
+                                    </button>
+                                </div>
 
                             </div>
                         </div>
