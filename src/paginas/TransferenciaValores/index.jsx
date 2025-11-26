@@ -1,148 +1,260 @@
-import React, { useState, useEffect } from 'react';
+// ... imports permanecem iguais
+import React, { useState, useEffect, useRef } from 'react';
 import Cabecalho from '../../componentes/Cabecalho';
 import { Rodape } from '../../componentes/Rodape';
-
-const unidadesMock = [
-    { id: 'dir-01', nome: 'Diretoria de Planejamento', tipo: 'Diretoria' },
-    { id: 'coord-02', nome: 'Coordenação de Orçamento', tipo: 'Coordenação' },
-    { id: 'ger-03', nome: 'Gerência de Indicadores', tipo: 'Gerência' },
-    { id: 'dir-04', nome: 'Diretoria Executiva', tipo: 'Diretoria' },
-];
-
-const indicadoresMock = [
-    { id: 'ind-001', codigo: 'IND-001', nome: 'Taxa de Execução Orçamentária', unidadeOrigemId: 'dir-01' },
-    { id: 'ind-002', codigo: 'IND-002', nome: 'Índice de Satisfação do Usuário', unidadeOrigemId: 'dir-01' },
-    { id: 'ind-003', codigo: 'IND-003', nome: 'Cumprimento de Metas Estratégicas', unidadeOrigemId: 'coord-02' },
-    { id: 'ind-004', codigo: 'IND-004', nome: 'Produtividade por Servidor', unidadeOrigemId: 'ger-03' },
-];
+import api from '../../services/api';
 
 function TransferenciaValores() {
-    const [de, setDe] = useState('');
-    const [para, setPara] = useState('');
+    const [deId, setDeId] = useState('');
+    const [paraId, setParaId] = useState('');
+    const [deTexto, setDeTexto] = useState('');
+    const [paraTexto, setParaTexto] = useState('');
     const [indicadoresDisponiveis, setIndicadoresDisponiveis] = useState([]);
     const [indicadorSelecionado, setIndicadorSelecionado] = useState('');
 
+    const [sugestoesDe, setSugestoesDe] = useState([]);
+    const [sugestoesPara, setSugestoesPara] = useState([]);
+    const [mostrarSugestoesDe, setMostrarSugestoesDe] = useState(false);
+    const [mostrarSugestoesPara, setMostrarSugestoesPara] = useState(false);
+    const [loadingDe, setLoadingDe] = useState(false);
+    const [loadingPara, setLoadingPara] = useState(false);
+    const [loadingIndicadores, setLoadingIndicadores] = useState(false);
+
+    const deRef = useRef(null);
+    const paraRef = useRef(null);
+
     useEffect(() => {
-        if (de) {
-            const filtrados = indicadoresMock.filter(ind => ind.unidadeOrigemId === de);
-            setIndicadoresDisponiveis(filtrados);
-            setIndicadorSelecionado('');
+        const timer = setTimeout(() => {
+            buscarUnidades(deTexto, 'de');
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [deTexto]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            buscarUnidades(paraTexto, 'para');
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [paraTexto]);
+
+    const buscarUnidades = async (texto, tipo) => {
+        if (!texto || texto.trim().length < 2) {
+            tipo === 'de' ? setSugestoesDe([]) : setSugestoesPara([]);
+            tipo === 'de' ? setMostrarSugestoesDe(false) : setMostrarSugestoesPara(false);
+            return;
+        }
+
+        const setLoading = tipo === 'de' ? setLoadingDe : setLoadingPara;
+        const setSugestoes = tipo === 'de' ? setSugestoesDe : setSugestoesPara;
+        const setMostrar = tipo === 'de' ? setMostrarSugestoesDe : setMostrarSugestoesPara;
+
+        try {
+            setLoading(true);
+            const response = await api.get(`/elementoOrganizacional/nome/${encodeURIComponent(texto.trim())}`);
+            const resultados = Array.from(response.data || []);
+            setSugestoes(resultados);
+            setMostrar(true);
+        } catch (error) {
+            console.error('Erro na busca:', error);
+            setSugestoes([]);
+            setMostrar(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (deRef.current && !deRef.current.contains(e.target)) setMostrarSugestoesDe(false);
+            if (paraRef.current && !paraRef.current.contains(e.target)) setMostrarSugestoesPara(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+
+    useEffect(() => {
+        const carregarIndicadoresTransferiveis = async () => {
+            if (!deId) {
+                setIndicadoresDisponiveis([]);
+                setIndicadorSelecionado('');
+                return;
+            }
+
+            try {
+                setLoadingIndicadores(true);
+                const response = await api.get(`/indicador/valores/${deId}`);
+
+                const indicadores = response.data || [];
+
+                setIndicadoresDisponiveis(indicadores);
+                setIndicadorSelecionado(''); 
+            } catch (error) {
+                console.error('Erro ao carregar indicadores transferíveis:', error);
+                alert('Não foi possível carregar os indicadores desta unidade.');
+                setIndicadoresDisponiveis([]);
+            } finally {
+                setLoadingIndicadores(false);
+            }
+        };
+
+        carregarIndicadoresTransferiveis();
+    }, [deId]); 
+
+    const selecionarUnidade = (unidade, tipo) => {
+        const texto = unidade.descricao || `${unidade.sigla} - ${unidade.nome}`;
+        if (tipo === 'de') {
+            setDeId(unidade.id);
+            setDeTexto(texto);
+            setMostrarSugestoesDe(false);
+            setParaId(''); setParaTexto('');
         } else {
-            setIndicadoresDisponiveis([]);
-            setIndicadorSelecionado('');
+            setParaId(unidade.id);
+            setParaTexto(texto);
+            setMostrarSugestoesPara(false);
         }
-    }, [de]);
+    };
 
-    const handleSalvar = () => {
-        if (!de || !para || !indicadorSelecionado) {
-            alert('Por favor, preencha todos os campos obrigatórios.');
-            return;
+    const handleSalvar = async () => {
+        if (!deId || !paraId || !indicadorSelecionado) return alert('Preencha todos os campos.');
+        if (deId === paraId) return alert('Origem e destino devem ser diferentes.');
+
+        try {
+            await api.post('/sua-rota-transferencia', { // AJUSTAR PARA A ROTA DE TRANSFERÊNCIA REAL
+                indicadorId: indicadorSelecionado,
+                origemId: deId,
+                destinoId: paraId
+            });
+            alert('Transferência realizada com sucesso!');
+            setDeId(''); setDeTexto(''); setParaId(''); setParaTexto('');
+            setIndicadorSelecionado(''); setIndicadoresDisponiveis([]);
+        } catch (err) {
+            alert('Erro ao salvar transferência.');
         }
-        if (de === para) {
-            alert('A unidade de origem e destino devem ser diferentes.');
-            return;
-        }
-
-        const indicador = indicadoresMock.find(i => i.id === indicadorSelecionado);
-        const origem = unidadesMock.find(u => u.id === de)?.nome;
-        const destino = unidadesMock.find(u => u.id === para)?.nome;
-
-        alert(`Indicador "${indicador.nome}" transferido com sucesso de "${origem}" para "${destino}"!`);
-
-        setDe('');
-        setPara('');
-        setIndicadorSelecionado('');
-        setIndicadoresDisponiveis([]);
     };
 
     return (
         <>
             <Cabecalho />
-
             <div className="container-fluid py-4">
                 <div className="row justify-content-center">
                     <div className="col-12 col-lg-8">
 
-                        <h3 className="mb-4">
-                            Transferência de Valores dos Indicadores
-                        </h3>
+                        <h3 className="mb-4">Transferência de Valores dos Indicadores</h3>
 
                         <div className="card border-0 shadow-sm">
                             <div className="card-body p-5">
 
                                 <div className="row g-3 mb-4">
-                                    <div className="col-12 col-md-6">
+                                    <div className="col-12 col-md-6" ref={deRef}>
                                         <label className="form-label fw-semibold">De:</label>
-                                        <select
-                                            className="form-select form-select-md"
-                                            value={de}
-                                            onChange={(e) => setDe(e.target.value)}
-                                        >
-                                            <option value="">Diretoria/Coordenação/Gerência de Origem</option>
-                                            {unidadesMock.map(unidade => (
-                                                <option key={unidade.id} value={unidade.id}>
-                                                    {unidade.tipo} - {unidade.nome}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <div className="position-relative">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-md"
+                                                value={deTexto}
+                                                onChange={(e) => setDeTexto(e.target.value)}
+                                                onFocus={() => sugestoesDe.length > 0 && setMostrarSugestoesDe(true)}
+                                                placeholder="Digite para buscar origem..."
+                                                autoComplete="off"
+                                            />
+                                            {mostrarSugestoesDe && (
+                                                <div className="position-absolute top-100 start-0 end-0 bg-white border rounded-bottom shadow-sm mt-1" style={{ zIndex: 1000, maxHeight: '220px', overflowY: 'auto' }}>
+                                                    {loadingDe ? (
+                                                        <div className="p-3 text-center text-muted small">Buscando...</div>
+                                                    ) : sugestoesDe.length === 0 ? (
+                                                        <div className="p-3 text-center text-muted small">Nenhum resultado</div>
+                                                    ) : (
+                                                        sugestoesDe.map(u => (
+                                                            <div
+                                                                key={u.id}
+                                                                className="px-3 py-2 hover-bg-light border-bottom"
+                                                                style={{ cursor: 'pointer' }}
+                                                                onClick={() => selecionarUnidade(u, 'de')}
+                                                            >
+                                                                <strong>{u.sigla}</strong> - {u.nome}
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    <div className="col-12 col-md-6">
+                                    <div className="col-12 col-md-6" ref={paraRef}>
                                         <label className="form-label fw-semibold">Para:</label>
-                                        <select
-                                            className="form-select form-select-md"
-                                            value={para}
-                                            onChange={(e) => setPara(e.target.value)}
-                                            disabled={!de}
-                                        >
-                                            <option value="">Diretoria/Coordenação/Gerência de Destino</option>
-                                            {unidadesMock
-                                                .filter(u => u.id !== de)
-                                                .map(unidade => (
-                                                    <option key={unidade.id} value={unidade.id}>
-                                                        {unidade.tipo} - {unidade.nome}
-                                                    </option>
-                                                ))}
-                                        </select>
+                                        <div className="position-relative">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-md"
+                                                value={paraTexto}
+                                                onChange={(e) => setParaTexto(e.target.value)}
+                                                onFocus={() => sugestoesPara.length > 0 && setMostrarSugestoesPara(true)}
+                                                placeholder="Digite para buscar destino..."
+                                                disabled={!deId}
+                                                autoComplete="off"
+                                            />
+                                            {mostrarSugestoesPara && (
+                                                <div className="position-absolute top-100 start-0 end-0 bg-white border rounded-bottom shadow-sm mt-1" style={{ zIndex: 1000, maxHeight: '220px', overflowY: 'auto' }}>
+                                                    {loadingPara ? (
+                                                        <div className="p-3 text-center text-muted small">Buscando...</div>
+                                                    ) : sugestoesPara.length === 0 ? (
+                                                        <div className="p-3 text-center text-muted small">Nenhum resultado</div>
+                                                    ) : (
+                                                        sugestoesPara
+                                                            .filter(u => u.id !== deId)
+                                                            .map(u => (
+                                                                <div
+                                                                    key={u.id}
+                                                                    className="px-3 py-2 hover-bg-light border-bottom"
+                                                                    style={{ cursor: 'pointer' }}
+                                                                    onClick={() => selecionarUnidade(u, 'para')}
+                                                                >
+                                                                    <strong>{u.sigla}</strong> - {u.nome}
+                                                                </div>
+                                                            ))
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                  
-                                <div className="mb-4 position-relative">
+
+                                <div className="position-relative mb-4">
                                     <label className="form-label fw-semibold">Indicador:</label>
                                     <select
-                                        className="form-select form-select-md"
+                                        className="form-select form-select-md pe-5"
                                         value={indicadorSelecionado}
                                         onChange={(e) => setIndicadorSelecionado(e.target.value)}
-                                        disabled={!de || indicadoresDisponiveis.length === 0}
+                                        disabled={!deId || loadingIndicadores || indicadoresDisponiveis.length === 0}
                                     >
                                         <option value="">
-                                            {de
-                                                ? indicadoresDisponiveis.length === 0
-                                                    ? 'Nenhum indicador disponível'
-                                                    : 'Selecione o indicador a transferir...'
-                                                : 'Primeiro selecione a unidade de origem'}
+                                            {loadingIndicadores
+                                                ? 'Carregando indicadores...'
+                                                : indicadoresDisponiveis.length === 0
+                                                    ? 'Nenhum indicador disponível para transferência'
+                                                    : 'Selecione o indicador'}
                                         </option>
                                         {indicadoresDisponiveis.map(ind => (
                                             <option key={ind.id} value={ind.id}>
-                                                [{ind.codigo}] {ind.nome}
+                                                {ind.nomeIndicador}
                                             </option>
                                         ))}
                                     </select>
-                                   
                                 </div>
-                                        
-                                    <div className="position-absolute end-0 bottom-2 mb-1 me-5">
+                                 <div className="position-absolute end-0 bottom-0 mb-3 me-5">
                                         <button
                                             onClick={handleSalvar}
-                                            disabled={!de || !para || !indicadorSelecionado}
+                                            disabled={!deId || !paraId || !indicadorSelecionado}
                                             className="btn btn-primary btn-md fw-semibold"
                                             style={{
                                                 backgroundColor: 'var(--azul-compesa)',
                                                 borderColor: 'var(--azul-compesa)',
-                                                minWidth: '140px'
+                                                minWidth: '150px'
+
                                             }}
                                             onMouseEnter={(e) => {
-                                                if (de && para && indicadorSelecionado) {
+                                                if (deId && paraId && indicadorSelecionado) {
                                                     e.target.style.backgroundColor = 'var(--verde-compesa)';
                                                     e.target.style.borderColor = 'var(--verde-compesa)';
                                                 }
@@ -155,13 +267,12 @@ function TransferenciaValores() {
                                             Salvar Transferência
                                         </button>
                                     </div>
+
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
-
             <Rodape />
         </>
     );
