@@ -1,8 +1,7 @@
-// ... imports permanecem iguais
 import React, { useState, useEffect, useRef } from 'react';
 import Cabecalho from '../../componentes/Cabecalho';
 import { Rodape } from '../../componentes/Rodape';
-import api from '../../services/api';
+import TransferenciaService from '../../services/transferenciaValores'; 
 
 function TransferenciaValores() {
     const [deId, setDeId] = useState('');
@@ -19,9 +18,19 @@ function TransferenciaValores() {
     const [loadingDe, setLoadingDe] = useState(false);
     const [loadingPara, setLoadingPara] = useState(false);
     const [loadingIndicadores, setLoadingIndicadores] = useState(false);
+    const [aviso, setAviso] = useState(null); 
 
     const deRef = useRef(null);
     const paraRef = useRef(null);
+
+    useEffect(() => {
+        if (aviso && aviso.tipo === 'success') {
+            const timer = setTimeout(() => {
+                setAviso(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [aviso]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -50,8 +59,7 @@ function TransferenciaValores() {
 
         try {
             setLoading(true);
-            const response = await api.get(`/elementoOrganizacional/nome/${encodeURIComponent(texto.trim())}`);
-            const resultados = Array.from(response.data || []);
+            const resultados = await TransferenciaService.buscarUnidades(texto);
             setSugestoes(resultados);
             setMostrar(true);
         } catch (error) {
@@ -83,15 +91,13 @@ function TransferenciaValores() {
 
             try {
                 setLoadingIndicadores(true);
-                const response = await api.get(`/indicador/valores/${deId}`);
-
-                const indicadores = response.data || [];
-
+                const indicadores = await TransferenciaService.buscarIndicadoresPorUnidade(deId);
+                
                 setIndicadoresDisponiveis(indicadores);
                 setIndicadorSelecionado('');
             } catch (error) {
                 console.error('Erro ao carregar indicadores transferíveis:', error);
-                alert('Não foi possível carregar os indicadores desta unidade.');
+                setAviso({ tipo: 'danger', msg: 'Não foi possível carregar os indicadores desta unidade.' });
                 setIndicadoresDisponiveis([]);
             } finally {
                 setLoadingIndicadores(false);
@@ -108,37 +114,30 @@ function TransferenciaValores() {
             setDeTexto(texto);
             setMostrarSugestoesDe(false);
             setParaId(''); setParaTexto('');
+            setAviso(null); 
         } else {
             setParaId(unidade.id);
             setParaTexto(texto);
             setMostrarSugestoesPara(false);
+            setAviso(null);
         }
     };
 
     const handleSalvar = async () => {
+        setAviso(null);
+
         if (!deId || !paraId || !indicadorSelecionado) {
-            return alert('Preencha todos os campos obrigatórios.');
+            return setAviso({ tipo: 'danger', msg: 'Preencha todos os campos obrigatórios.' });
         }
         if (deId === paraId) {
-            return alert('Origem e destino devem ser diferentes.');
+            return setAviso({ tipo: 'danger', msg: 'Origem e destino devem ser diferentes.' });
         }
 
         try {
-            // PAYLOAD CORRETO → LISTA COM OBJETO NO FORMATO DO DTO Transferencia
-            const payload = [
-                {
-                    indicadorDe: { id: indicadorSelecionado },
-                    indicadorPara: { id: indicadorSelecionado }, // mesmo indicador!
-                    elementoOrganizacionalDe: { id: deId },
-                    elementoOrganizacionalPara: { id: paraId }
-                }
-            ];
+            await TransferenciaService.realizarTransferencia(deId, paraId, indicadorSelecionado);
 
-            await api.post('/indicador/transferir', payload);
+            setAviso({ tipo: 'success', msg: 'Valores copiados com sucesso!' });
 
-            alert('Valores copiados com sucesso para a unidade de destino!');
-
-            // Reset dos campos
             setDeId('');
             setDeTexto('');
             setParaId('');
@@ -148,9 +147,10 @@ function TransferenciaValores() {
 
         } catch (error) {
             console.error('Erro ao copiar valores:', error);
-            alert('Erro ao copiar os valores. Verifique os dados e tente novamente.');
+            setAviso({ tipo: 'danger', msg: 'Erro ao copiar os valores. Verifique os dados e tente novamente.' });
         }
     };
+
     return (
         <>
             <Cabecalho />
@@ -159,6 +159,14 @@ function TransferenciaValores() {
                     <div className="col-12 col-lg-8">
 
                         <h3 className="mb-4">Transferência de Valores dos Indicadores</h3>
+
+                        {aviso && (
+                            <div className={`alert alert-${aviso.tipo} alert-dismissible fade show shadow-sm mb-4`} role="alert">
+                                {aviso.tipo === 'success' ? <i className="bi bi-check-circle-fill me-2"></i> : <i className="bi bi-exclamation-triangle-fill me-2"></i>}
+                                {aviso.msg}
+                                <button type="button" className="btn-close" onClick={() => setAviso(null)} aria-label="Close"></button>
+                            </div>
+                        )}
 
                         <div className="card border-0 shadow-sm">
                             <div className="card-body p-5">
