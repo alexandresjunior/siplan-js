@@ -167,3 +167,16 @@ export const excluirIndicadorPermanentemente = async (idIndicador) => {
     throw new Error("Falha ao excluir o indicador permanentemente.");
   }
 };
+
+
+export const buscarVariaveisDoIndicador = async (idIndicador) => {
+  try {
+    const response = await api.get(`/indicador/variaveis/${idIndicador}`, {
+      headers: getAuthHeaders()
+    });
+    return response.data
+  } catch (error) {
+    console.error("Erro ao buscar variáveis de indicador: ", error);
+    return []
+  }
+}
