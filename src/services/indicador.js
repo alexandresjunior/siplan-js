@@ -1,6 +1,5 @@
 import api from "./api";
 
-// Função auxiliar de headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   if (!token) {
@@ -13,7 +12,6 @@ const getAuthHeaders = () => {
   };
 };
 
-// --- SERVIÇOS DE CONSULTA AUXILIAR ---
 
 export const buscarTiposIndicador = async () => {
   try {
@@ -60,12 +58,11 @@ export const buscarObjetivosPorAno = async (ano) => {
   }
 };
 
-// Busca por nome (Tags)
+
 export const buscarIndicadorPorNomeLike = async (termo, idUnidade) => {
   try {
     let url = `/indicador/nome/like/${termo}`;
     
-    // Se tiver ID da unidade, usa a rota específica de filtragem por EO
     if (idUnidade) {
         url = `/indicador/nome/like/${termo}/${idUnidade}`;
     }
@@ -78,9 +75,7 @@ export const buscarIndicadorPorNomeLike = async (termo, idUnidade) => {
   }
 };
 
-// --- SERVIÇOS DE INDICADORES (ATIVOS E LIXEIRA) ---
 
-// ATUALIZADO: Agora consome o endpoint real paginado criado no Backend
 export const buscarIndicadoresPaginados = async (idUnidade, ano, pagina = 0, tamanho = 10, listaIdsFiltro = []) => {
   try {
     const params = {
@@ -88,14 +83,11 @@ export const buscarIndicadoresPaginados = async (idUnidade, ano, pagina = 0, tam
         size: tamanho,
         sort: "nomeIndicador,asc"
     };
-    
-    // Adiciona os IDs das tags se houver
+
     if (listaIdsFiltro && listaIdsFiltro.length > 0) {
         params.idsIndicadores = listaIdsFiltro.join(','); 
     }
 
-    // Nota: O parâmetro 'ano' não está sendo enviado pois a entidade Indicador 
-    // não possui filtro direto de ano no backend atual, apenas a Unidade Organizacional.
     
     const response = await api.get(`/indicador/paginados/${idUnidade}`, { params });
     return response.data;
@@ -122,13 +114,11 @@ export const buscarIndicadoresExcluidosPaginados = async (idElementoOrganizacion
   }
 };
 
-// --- SERVIÇOS DE AÇÃO (SALVAR, EXCLUIR, RESTAURAR) ---
 
 export const salvarIndicador = async (indicador) => {
   console.log('print de salvar indicador')
   try {
-    // Aponta para /manual conforme seu controller. 
-    // Se precisar diferenciar tipos futuramente, adicione lógica aqui.
+
     const url = '/indicador/manual'; 
     
     const response = await api.post(url, indicador);
