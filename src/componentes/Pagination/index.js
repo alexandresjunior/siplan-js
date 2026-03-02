@@ -60,7 +60,7 @@ const Pagination = ({
           id="tamanho-pagina"
           name="tamanho-pagina"
           className="form-select text-body-primary mx-2"
-          onChange={(evento) => definirTamanho(evento.target.value)}
+          onChange={(evento) => definirTamanho(Number(evento.target.value))}
           value={tamanho} 
         >
           <option value={opcoesPagina[0]}>{opcoesPagina[0]}</option>

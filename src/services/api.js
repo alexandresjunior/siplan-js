@@ -1,5 +1,5 @@
 import axios from "axios";
-import { isTokenExpired, getToken } from "../utils/jwtUtils";
+import { tokenEstaExpirado, obterToken } from "../utils/jwtUtils";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BACKEND_URL,
@@ -7,8 +7,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
-    console.log("Interceptor de requisição:", { url: config.url, token });
+    const token = obterToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,19 +21,12 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    console.log("Resposta recebida:", response.config.url, response.status);
+
     return response;
   },
   (error) => {
-    console.log("Interceptor de resposta acionado:", {
-      status: error.response?.status,
-      message: error.message,
-      url: error.config?.url,
-    });
-
-    const token = getToken();
-    if ((token && isTokenExpired(token)) || error.response?.status === 401) {
-      console.log("Exibindo aviso de sessão expirada");
+    const token = obterToken();
+    if ((token && tokenEstaExpirado(token)) || error.response?.status === 401) {
 
       const overlay = document.createElement("div");
       overlay.style.position = "fixed";
@@ -77,7 +69,6 @@ api.interceptors.response.use(
       }, 1000);
 
       setTimeout(() => {
-        console.log("Redirecionando para /");
         if (document.body.contains(overlay)) {
           document.body.removeChild(overlay);
         }
@@ -88,7 +79,6 @@ api.interceptors.response.use(
       return Promise.reject(new Error("Sessão expirada"));
     }
 
-    console.log("Propagando erro:", error.message);
     return Promise.reject(error);
   }
 );

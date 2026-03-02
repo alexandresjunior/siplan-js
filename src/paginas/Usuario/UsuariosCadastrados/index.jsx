@@ -7,22 +7,21 @@ import { AiOutlineDelete } from 'react-icons/ai';
 import { FaCheck, FaTimes } from "react-icons/fa";
 import {
   buscarIndicadores,
-  manipularAdicionarIndicador,
+  adicionarIndicadorLiberado,
   manipularExcluir,
-  manipularAlterarPermissao,
   manipularExcluirIndicador as excluirIndicadorService
-} from "../../../services/usuariosCadastrados";
+} from "../../../services/usuarios";
 import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import api from "../../../services/api";
 
-const URL_API = 'http://localhost:8098/usuariosip/usuarioscadastrados';
-const URL_ATUALIZAR_USUARIO = 'http://localhost:8098/usuariosip/atualizarUsuario';
-const URL_USUARIO_POR_ID = 'http://localhost:8098/usuariosip/obterporid';
-const URL_EXCLUIR_USUARIO = 'http://localhost:8098/usuariosip';
-const URL_FILTRO_NOME = 'http://localhost:8098/usuariosip/filtro/porNome';
-const URL_FILTRO_PERMISSAO = 'http://localhost:8098/usuariosip/filtro/porPermissao';
-const URL_ATUALIZAR_USUARIO_V2 = 'http://localhost:8098/usuariosip/atualizarUsuarioV2';
+const URL_API = '/usuariosip/usuarioscadastrados';
+const URL_ATUALIZAR_USUARIO = '/usuariosip/atualizarUsuario';
+const URL_USUARIO_POR_ID = '/usuariosip/obterporid';
+const URL_EXCLUIR_USUARIO = '/usuariosip';
+const URL_FILTRO_NOME = '/usuariosip/filtro/porNome';
+const URL_FILTRO_PERMISSAO = '/usuariosip/filtro/porPermissao';
+const URL_ATUALIZAR_USUARIO_V2 = '/usuariosip/atualizarUsuarioV2';
 
 function Usuario() {
   const [usuarios, setUsuarios] = useState([]);
@@ -61,7 +60,7 @@ function Usuario() {
     { key: 'atualizarLotAutomatica', label: 'Atualização Automática' }
   ];
 
-  const handlePermissaoChange = (permissaoKey) => {
+  const manipularMudarPermissao = (permissaoKey) => {
     setPermissoesSelecionadas(prevSelecionadas => {
       if (prevSelecionadas.includes(permissaoKey)) {
         return prevSelecionadas.filter(p => p !== permissaoKey);
@@ -93,7 +92,7 @@ function Usuario() {
 
       if (filtroNome.trim()) {
         const url = URL_FILTRO_NOME;
-        console.log('Requisição por nome:', url);
+
         response = await api.get(url, {
           headers,
           params: { nome: filtroNome.trim(), page: paginaAtual, size: tamanhoPagina }
@@ -114,7 +113,7 @@ function Usuario() {
       } else if (permissoesSelecionadas.length > 0) {
         const params = {};
         permissoesSelecionadas.forEach(p => params[p] = true);
-        console.log('Requisição por permissão:', URL_FILTRO_PERMISSAO, params);
+
         response = await api.get(URL_FILTRO_PERMISSAO, {
           headers,
           params: { ...params, page: paginaAtual, size: tamanhoPagina }
@@ -124,7 +123,6 @@ function Usuario() {
         setTotalElementos(response.data.totalElements || 0);
 
       } else {
-        console.log('Requisição padrão (sem filtros):', URL_API);
         response = await api.get(URL_API, {
           headers,
           params: { page: paginaAtual, size: tamanhoPagina }
@@ -157,7 +155,7 @@ function Usuario() {
       }
 
       try {
-        const { data: diretoriaText } = await api.get(`http://localhost:8098/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
+        const { data: diretoriaText } = await api.get(`/elementoOrganizacional/apenasDiretorias/${anoOrganograma}`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
 
@@ -218,7 +216,7 @@ function Usuario() {
       const token = localStorage.getItem('token');
       const diretoriaSelecionada = opcoesDiretoria.find(d => d.id === diretoria);
       const textoProcura = diretoriaSelecionada ? encodeURIComponent(diretoriaSelecionada.nome) : 'null';
-      const url = `http://localhost:8098/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
+      const url = `/elementoOrganizacional/nome/ano/${textoProcura}/${anoOrganograma}/${diretoria}`;
 
       const { data: texto } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -251,7 +249,7 @@ function Usuario() {
         throw new Error('ID do elemento organizacional não é um número válido');
       }
 
-      const url = `http://localhost:8098/indicador/valores/${elementoId}`;
+      const url = `/indicador/valores/${elementoId}`;
 
       const { data } = await api.get(url, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -285,7 +283,7 @@ function Usuario() {
     setAnoOrganograma('');
     setDiretoria('');
     setGerencia('');
-    setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' }); 
+    setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' });
     setOpcoesGerencia([]);
     setOpcoesIndicadores([]);
     setIndicadoresSelecionados([]);
@@ -311,10 +309,9 @@ function Usuario() {
   };
 
 
-  const handleAdicionarIndicador = async () => {
+  const manipularAdicionarIndicador = async () => {
     if (!anoOrganograma || !diretoria || !gerencia || indicadoresSelecionados.length === 0) {
 
-      // ✅ COLE:
       mostrarAlerta('Todos os campos obrigatórios devem ser preenchidos e pelo menos um indicador deve ser selecionado.', 'erro');
       return;
     }
@@ -329,11 +326,9 @@ function Usuario() {
           usuarioId: idUsuarioSelecionado,
           indicadorId: parseInt(indicadorId)
         };
-        await manipularAdicionarIndicador(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
+        await adicionarIndicadorLiberado(setIndicadores, idUsuarioSelecionado, URL_USUARIO_POR_ID, URL_ATUALIZAR_USUARIO, payload);
       }
 
-
-      // ✅ COLE:
       mostrarAlerta('Indicadores salvos com sucesso!');
 
       fecharModalAdicionar();
@@ -346,14 +341,13 @@ function Usuario() {
 
     } catch (erro) {
       console.error('Erro ao adicionar indicadores:', erro);
-      // ✅ COLE:
       mostrarAlerta('Falha ao adicionar indicadores. Tente novamente.', 'erro');
     }
   };
 
   const manipularExcluirIndicador = (idIndicador) => {
     const customConfirm = (message, onConfirm) => {
-      console.warn(`Confirmação: ${message}. Excluindo indicador ${idIndicador}...`);
+      
       if (true) {
         excluirIndicadorService(
           setIndicadores,
@@ -362,7 +356,7 @@ function Usuario() {
           URL_USUARIO_POR_ID,
           URL_ATUALIZAR_USUARIO
         );
-        // ✅ ADICIONE:
+
         mostrarAlerta('Indicador excluído com sucesso!');
       }
     };
@@ -374,12 +368,12 @@ function Usuario() {
         URL_USUARIO_POR_ID,
         URL_ATUALIZAR_USUARIO
       );
-      // ✅ ADICIONE:
+
       mostrarAlerta('Indicador excluído com sucesso!');
     });
   };
 
-  const handleSalvarPermissoes = async () => {
+  const manipularSalvarPermissoes = async () => {
     if (idUsuarioSelecionado && usuarioEditando) {
       setCarregando(true);
       try {
@@ -420,6 +414,7 @@ function Usuario() {
   const abrirModalElementos = (idUsuario) => {
     setIdUsuarioSelecionado(idUsuario);
     setExibirModalElementos(true);
+    // TODO: 
     // Adicionar lógica para buscar elementos organizacionais 
     // setElementosOrganizacionais( buscarElementos(idUsuario) ); 
   };
@@ -429,10 +424,10 @@ function Usuario() {
   };
 
   const abrirModalAdicionarElemento = () => {
-    // Lógica para abrir modal de adicionar elemento
+    // TODO: Lógica para abrir modal de adicionar elemento
   };
 
-  const handleExcluirUsuario = (idUsuario) => {
+  const manipularExcluirUsuario = (idUsuario) => {
     const confirmacao = window.confirm(`Tem certeza que deseja excluir o usuário com ID ${idUsuario}?`);
     if (confirmacao) {
       manipularExcluir(
@@ -488,7 +483,7 @@ function Usuario() {
   ];
 
   const botoesAcaoModalAdicionar = [
-    { label: 'Salvar', className: 'btn btn-primary', onClick: handleAdicionarIndicador },
+    { label: 'Salvar', className: 'btn btn-primary', onClick: manipularAdicionarIndicador },
     { label: 'Sair', className: 'btn btn-outline-primary btn-sair', onClick: fecharModalAdicionar }
   ];
 
@@ -496,7 +491,7 @@ function Usuario() {
     {
       label: 'Salvar',
       className: 'btn btn-primary',
-      onClick: handleSalvarPermissoes
+      onClick: manipularSalvarPermissoes
     },
     {
       label: 'Sair',
@@ -613,7 +608,7 @@ function Usuario() {
               data-bs-toggle="dropdown"
               aria-expanded="false"
               style={{ fontSize: "1.5em", color: "black", background: "none", border: "none", padding: "0" }}
-              onClick={() => console.log('Dropdown clicado para userId:', usuario.id)}
+
             >
               ⋮
             </button>
@@ -624,7 +619,7 @@ function Usuario() {
               <li>
                 <button
                   className="dropdown-item text-danger"
-                  onClick={() => handleExcluirUsuario(usuario.id)}
+                  onClick={() => manipularExcluirUsuario(usuario.id)}
                 >
                   Excluir
                 </button>
@@ -686,7 +681,7 @@ function Usuario() {
                   type="checkbox"
                   id={`check-${p.key}`}
                   checked={permissoesSelecionadas.includes(p.key)}
-                  onChange={() => handlePermissaoChange(p.key)}
+                  onChange={() => manipularMudarPermissao(p.key)}
                 />
                 <label className="form-check-label" htmlFor={`check-${p.key}`}>
                   {p.label}

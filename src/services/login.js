@@ -1,8 +1,8 @@
-import api from "./api";
+import api from './api';
 
 async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
   try {
-    const resposta = await api.post("/authenticate/auth", {
+    const resposta = await api.post('/authenticate/auth', {
       login: nomeUsuario,
       senha,
     });
@@ -32,8 +32,8 @@ async function servicoLogin(nomeUsuario, senha, navegar, definirErro) {
 }
 
 function realizarLogout(navegar) {
-  localStorage.removeItem("token");
-  navegar("/");
+  localStorage.removeItem('token');
+  navegar('/');
 }
 
 export default { login: servicoLogin, logout: realizarLogout };

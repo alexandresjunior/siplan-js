@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { obterUsuarioPorLogin } from '../../../services/novoUsuarioService';
+import { obterUsuarioPorLogin } from '../../../services/usuarios';
 import Cabecalho from '../../../componentes/Cabecalho';
 import { Rodape } from '../../../componentes/Rodape';
 import api from '../../../services/api';
@@ -19,11 +19,11 @@ function NovoUsuario() {
   const verificarUsuarioCadastrado = async (login) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await api.get('http://localhost:8098/usuariosip/usuarioscadastrados', {
+      const response = await api.get('/usuariosip/usuarioscadastrados', {
         headers: { 'Authorization': `Bearer ${token}` },
         params: { page: 0, size: 1000 }
       });
-      
+
       const usuariosCadastrados = response.data.content || [];
       return usuariosCadastrados.some(usuario => usuario.login === login);
     } catch {
@@ -33,12 +33,12 @@ function NovoUsuario() {
 
   const manipularBuscarUsuario = async () => {
     setAlerta({ mostrar: false, mensagem: '', tipo: 'sucesso' });
-    
+
     if (loginRede.trim() === '') {
       mostrarAlerta('Por favor, insira o login de rede.', 'erro');
       return;
     }
-    
+
     setCarregando(true);
 
     try {
@@ -50,9 +50,9 @@ function NovoUsuario() {
       }
 
       const dados = await obterUsuarioPorLogin(loginRede);
-      
-      navigate(`/cadastros/configurar-usuario`, { 
-        state: { usuarioData: dados } 
+
+      navigate(`/cadastros/configurar-usuario`, {
+        state: { usuarioData: dados }
       });
       mostrarAlerta('Usuário encontrado! Redirecionando...', 'sucesso');
 
@@ -60,9 +60,9 @@ function NovoUsuario() {
       const msgErro = erro.response && erro.response.status === 404
         ? `Usuário com login "${loginRede}" não encontrado no Siplan.`
         : 'Falha ao buscar usuário. Verifique sua conexão ou permissões.';
-      
+
       mostrarAlerta(msgErro, 'erro');
-      
+
     } finally {
       setCarregando(false);
     }
@@ -92,7 +92,7 @@ function NovoUsuario() {
         <div className="row justify-content-center">
           <div className="col-md-8 col-lg-6">
             <h3 className="mb-4">Cadastrar Novo Usuário</h3>
-            
+
             <div className="card shadow-sm">
               <div className="card-body p-4">
                 <div className="mb-4">
@@ -110,10 +110,10 @@ function NovoUsuario() {
                   />
                 </div>
                 <div className="d-flex justify-content-end mt-4">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn btn-outline-secondary me-2"
-                    onClick={() => navigate('/cadastros/usuarioscadastrados')} 
+                    onClick={() => navigate('/cadastros/usuarioscadastrados')}
                     disabled={carregando}
                   >
                     Voltar

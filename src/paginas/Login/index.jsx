@@ -16,7 +16,7 @@ function Login() {
 
   const manipularEnvio = async (e) => {
     e.preventDefault();
-    console.log('Botão ENTRAR clicado. Usuário:', nomeUsuario, 'Senha:', senha);
+
     if (!nomeUsuario.trim() || !senha.trim()) {
       setMensagemErro('Por favor, preencha usuário e senha.');
       return;

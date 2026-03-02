@@ -19,3 +19,10 @@
     font-size: 1.2em;
     color: #333;
 }
+
+/* Remove borda no hover e foco das abas */
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}

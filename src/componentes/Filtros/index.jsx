@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { buscarDiretoriasPorAno, buscarUnidadesPorDiretoria } from '../../services/elementoOrganizacional';
 
-const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
+const Filtros = ({ onUnidadeChange, onAnoChange, setCarregandoFiltros }) => {
     const [anos, setAnos] = useState([]);
     const [diretorias, setDiretorias] = useState([]);
     const [unidades, setUnidades] = useState([]);
@@ -29,6 +29,9 @@ const Filtros = ({ onUnidadeChange, setCarregandoFiltros }) => {
         onUnidadeChange(null);
 
         if (anoSelecionado) {
+            if (onAnoChange) {
+                onAnoChange(anoSelecionado);
+            }
             setCarregandoFiltros(true);
             buscarDiretoriasPorAno(anoSelecionado)
                 .then(data => setDiretorias(data))
