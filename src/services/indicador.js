@@ -1,8 +1,4 @@
 import api from "./api";
-<<<<<<< HEAD
-=======
-const URL_BASE = "http://localhost:8098/indicador";
->>>>>>> 3cb7d18 (refactor: melhorias de código e mudança para axios)
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");

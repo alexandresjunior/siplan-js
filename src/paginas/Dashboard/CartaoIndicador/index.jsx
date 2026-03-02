@@ -7,7 +7,7 @@ import GraficoIndicador from '../GraficoIndicador';
 import Modal from '../../../componentes/Modal';
 import './estilos.css';
 import { useState } from 'react';
-import api from '../../../services/api'; // ADICIONE ESTA LINHA
+import api from '../../../services/api';
 
 const getStatusIcon = (value) => {
     if (value < 95) return closeIcon;
@@ -97,13 +97,13 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
             setCarregando(false);
         }
     };
+
     const botoesModal = [
         { texto: 'Sair', variante: 'secondary', aoClicar: () => setModalAberto(false) },
         { texto: 'Salvar', variante: 'primary', aoClicar: salvar },
     ];
 
     return (
-<<<<<<< HEAD
         <>
             <div className="kpi-card position-relative">
                 {/* Header com título + ícone ao lado */}
@@ -128,14 +128,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                         </div>
 
                         {data.descricao && <small className="text-muted d-block mt-2">{data.descricao}</small>}
-=======
-        <div className="kpi-card">
-            <div className="card-header">
-                <div className="mb-3">
-                    <div className="d-flex align-items-center mb-2">
-                        <FaArrowCircleUp size={20} className="arrow-primary me-2" />
-                        <h3 className="h5 text-primary mb-0">{titulo}</h3>
->>>>>>> 3cb7d18 (refactor: melhorias de código e mudança para axios)
                     </div>
                 </div>
 
