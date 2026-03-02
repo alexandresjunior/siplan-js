@@ -150,7 +150,7 @@ function DataFechamento() {
                     <div className="dropdown">
                         <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}> ⋮ </button>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item d-flex align-items-center" href="#" onClick={() => abrirModalEditar(item)}><FiEdit className="me-2" /> Editar</a></li>
+                            <li><a className="dropdown-item d-flex align-items-center" href="/" onClick={() => abrirModalEditar(item)}><FiEdit className="me-2" /> Editar</a></li>
                             <li><button className="dropdown-item text-danger d-flex align-items-center" onClick={() => abrirModalExcluir(item)}><AiOutlineDelete className="me-2" /> Excluir</button></li>
                         </ul>
                     </div>

@@ -29,8 +29,8 @@ export const buscarConfiguracoes = async (
 
     const dadosMapeados = dados.content.map((item) => ({
       id: item.id,
-      nome: item.nomeDiretoria,
-      ciclo: item.nomeCiclo,
+      nome: item.diretoria.nome,
+      ciclo: item.ciclo.id,
       ano: item.ano,
       dataFechamento: item.dataFechamento
         ? new Date(item.dataFechamento).toLocaleDateString("pt-BR")

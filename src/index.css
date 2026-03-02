@@ -18,6 +18,10 @@
    color: #FFF !important;
 }
 
+.border-primary {
+   border-color: var(--azul-compesa) !important;
+}
+
 .btn-primary:hover {
    background-color: var(--verde-compesa) !important;
    color: #FFF !important;
@@ -42,8 +46,17 @@
    color: var(--azul-compesa) !important;
 }
 
+.nav-item .nav-link.text-primary,
 .text-primary {
    color: var(--azul-compesa) !important;
+}
+
+.text-dark {
+   color: #000 !important;
+}
+
+.nav-item .nav-link.active {
+   color: #FFF !important;
 }
 
 html,

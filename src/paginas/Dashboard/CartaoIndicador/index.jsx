@@ -2,12 +2,12 @@ import checkIcon from '../../../assets/imagens/icon-check.svg';
 import alertIcon from '../../../assets/imagens/icon-alert.svg';
 import closeIcon from '../../../assets/imagens/icon-close.svg';
 import starIcon from '../../../assets/imagens/icon-star.svg';
-import { FaArrowCircleUp } from 'react-icons/fa';
 import GraficoIndicador from '../GraficoIndicador';
 import Modal from '../../../componentes/Modal';
-import './estilos.css';
-import { useState } from 'react';
 import api from '../../../services/api';
+import { FaArrowCircleUp } from 'react-icons/fa';
+import { useState } from 'react';
+import './estilos.css';
 
 const getStatusIcon = (value) => {
     if (value < 95) return closeIcon;
@@ -20,35 +20,30 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
     const [data, setData] = useState(initialData);
     const [modalAberto, setModalAberto] = useState(false);
     const [formData, setFormData] = useState({});
-    const [carregando, setCarregando] = useState(false); // NOVA
+    const [carregando, setCarregando] = useState(false);
 
     const { id } = data;
     const iconSrc = getStatusIcon(data.kpi);
 
-    // Abre modal e carrega dados atuais
     const abrirModal = () => {
         setFormData({ ...data });
         setModalAberto(true);
     };
 
-    // Extrai apenas o número, ignorando R$, %, espaços, etc.
     const extrairNumero = (valor) => {
         if (!valor) return 0;
         const limpo = valor.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
         return parseFloat(limpo) || 0;
     };
 
-    // Atualiza campo
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Permite digitar R$, %, espaços, etc. — mas salva apenas o número
         const numValue = value === '' ? '' : extrairNumero(value);
 
         setFormData((prev) => {
             const novo = { ...prev, [name]: numValue };
 
-            // Cálculo do KPI (só com números)
             if (novo.real !== undefined && (novo.meta !== undefined || novo.teto !== undefined)) {
                 const base = novo.teto !== undefined && novo.teto !== 0 ? novo.teto : novo.meta;
                 novo.kpi = base ? (novo.real / base) * 100 : 0;
@@ -57,7 +52,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
         });
     };
 
-    // FUNÇÃO SALVAR COM BACKEND
     const salvar = async () => {
         if (!id) {
             alert("Cartão sem ID — não pode salvar");
@@ -67,7 +61,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
         setCarregando(true);
 
         try {
-            // payload tem que estar DENTRO do try
             const payload = {
                 valorIndicador: formData.teto !== undefined ? formData.teto : formData.meta,
                 real: formData.real
@@ -76,7 +69,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
             const response = await api.put(`/dashboard/atualizarCartao/${id}`, payload);
             const dadosDoBackend = response.data;
 
-            // Reconstrói teto/meta corretamente
             const dadosAtualizados = {
                 ...data,
                 ...dadosDoBackend,
@@ -98,24 +90,16 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
         }
     };
 
-    const botoesModal = [
-        { texto: 'Sair', variante: 'secondary', aoClicar: () => setModalAberto(false) },
-        { texto: 'Salvar', variante: 'primary', aoClicar: salvar },
-    ];
-
     return (
         <>
             <div className="kpi-card position-relative">
-                {/* Header com título + ícone ao lado */}
                 <div className="card-header pb-5">
                     <div className="mb-3">
-                        {/* Linha principal: seta + título + ícone (tudo junto, à esquerda) */}
                         <div className="d-flex align-items-center gap-2 mb-1">
                             <FaArrowCircleUp size={20} className="arrow-primary flex-shrink-0" />
 
-                            {/* Título + ícone (em um bloco que cresce, mas não empurra) */}
                             <div className="d-flex align-items-center gap-2 flex-grow-1 min-width-0">
-                                <h3 className="h5 text-primary mb-0 text-truncate">
+                                <h3 className="h5 mb-0 text-truncate">
                                     {data.nome}
                                 </h3>
                                 <img
@@ -131,12 +115,11 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                     </div>
                 </div>
 
-                {/* Botão Editar – alinhado verticalmente com o ícone de status */}
                 <button
                     onClick={abrirModal}
                     className="btn btn-primary btn-sm position-absolute"
                     style={{
-                        top: '1.0rem',   // descido para alinhar com o ícone (ajuste fino)
+                        top: '1.0rem',
                         right: '0.75rem',
                         whiteSpace: 'nowrap'
                     }}
@@ -144,7 +127,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                     Editar
                 </button>
 
-                {/* Corpo do cartão – altura fixa para o gráfico */}
                 <div className="card-body" style={{ minHeight: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <GraficoIndicador value={data.kpi} />
                 </div>
@@ -162,7 +144,7 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
 
                 {data.metaUnidade && <p className="kpi-unidade">{data.metaUnidade}</p>}
             </div>
-            {/* Modal de Edição – botões no canto superior direito, lado a lado */}
+
             <Modal
                 estaAberto={modalAberto}
                 aoFechar={() => setModalAberto(false)}
@@ -182,7 +164,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                 ]}
             >
                 <div className="row g-3">
-                    {/* Campo condicional: Meta ou Teto */}
                     {formData.meta !== undefined && (
                         <div className="col-md-6">
                             <label className="form-label">Meta</label>
@@ -234,7 +215,6 @@ const CartaoIndicador = ({ data: initialData, onSalvar }) => {
                 </div>
             </Modal>
         </>
-
     );
 };
 

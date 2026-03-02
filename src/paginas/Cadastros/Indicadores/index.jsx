@@ -61,7 +61,6 @@ function CadastroIndicadores() {
     const [unidadesSelecionadasModal, setUnidadesSelecionadasModal] = useState([]);
     const [listaAnosModal, setListaAnosModal] = useState([]); 
 
-    // ... (Efeitos, Busca, Carregar Dados - MANTIDOS IGUAIS) ...
     useEffect(() => {
         Promise.all([buscarTiposIndicador(), buscarSentidosIndicador()]).then(([tipos, sentidos]) => {
             setListaTipos(tipos); setListaSentidos(sentidos);
@@ -91,7 +90,6 @@ function CadastroIndicadores() {
         try { const anoBase = 2024; const [riscos, objetivos] = await Promise.all([buscarRiscosPorAno(anoBase), buscarObjetivosPorAno(anoBase)]); setListaRiscos(riscos); setListaObjetivos(objetivos); } catch (error) { console.error(error); }
     };
 
-    // ... (Autocomplete, Modal Vinculo Lógica, Toggles - MANTIDOS IGUAIS) ...
     useEffect(() => { const timer = setTimeout(() => { if (termoUnidadeResp.length > 2) { buscarElementosPorNome(termoUnidadeResp).then(data => { setSugestoesUnidadeResp(data || []); setMostraSugestoesResp(true); }); } else { setMostraSugestoesResp(false); } }, 500); return () => clearTimeout(timer); }, [termoUnidadeResp]);
     const selecionarUnidadeResponsavel = (unidade) => { setItemEmEdicao({ ...itemEmEdicao, elementoOrganizacionalResp: unidade }); setTermoUnidadeResp(''); setMostraSugestoesResp(false); };
     useEffect(() => { if (modalVinculoAberto) { setVinculoAno(''); setVinculoDiretoria(''); setListaDiretoriasModal([]); setListaUnidadesModal([]); setUnidadesSelecionadasModal([...(itemEmEdicao.elementosOrganizacionaisRelacionados || [])]); } }, [modalVinculoAberto]);
@@ -101,12 +99,10 @@ function CadastroIndicadores() {
     const toggleTodosModal = (e) => { if (e.target.checked) { const novos = listaUnidadesModal.filter(u => !unidadesSelecionadasModal.some(sel => sel.id === u.id)); setUnidadesSelecionadasModal([...unidadesSelecionadasModal, ...novos]); } else { const idsParaRemover = listaUnidadesModal.map(u => u.id); setUnidadesSelecionadasModal(unidadesSelecionadasModal.filter(u => !idsParaRemover.includes(u.id))); } };
     const salvarSelecaoModal = () => { setItemEmEdicao({ ...itemEmEdicao, elementosOrganizacionaisRelacionados: unidadesSelecionadasModal }); setModalVinculoAberto(false); };
 
-    // ... (CRUD Handlers - MANTIDOS IGUAIS) ...
     const handleNovoIndicador = () => { setItemEmEdicao({ nomeIndicador: '', descricao: '', tipoIndicador: null, sentidoIndicador: null, unidadeMedida: '', risco: null, objetivo: null, indicadorVinculado: '', elementoOrganizacionalResp: null, elementosOrganizacionaisRelacionados: [] }); setTermoUnidadeResp(''); setUnidadesSelecionadasModal([]); carregarDadosFormulario(); setModalFormAberto(true); };
     const handleEditar = (indicador) => { const itemEdit = { ...indicador }; if (indicador.formula) itemEdit.indicadorVinculado = indicador.formula; setItemEmEdicao(itemEdit); if (indicador.elementoOrganizacionalResp) { setTermoUnidadeResp(indicador.elementoOrganizacionalResp.sigla + ' - ' + indicador.elementoOrganizacionalResp.nome); } else { setTermoUnidadeResp(''); } setUnidadesSelecionadasModal(indicador.elementosOrganizacionaisRelacionados || []); carregarDadosFormulario(); setModalFormAberto(true); };
     const handleSalvar = async () => { if (!itemEmEdicao.nomeIndicador || !itemEmEdicao.tipoIndicador) { alert("Preencha os campos obrigatórios (*)"); return; } try { const payload = prepararPayload(itemEmEdicao); await salvarIndicador(payload); setModalFormAberto(false); setPaginaAtual(0); carregarIndicadores(); alert('Indicador salvo com sucesso!'); } catch (error) { console.error("Erro no salvar:", error); const msg = error.response?.data?.message || "Erro de conexão"; alert(`Erro ao salvar: ${msg}`); } };
 
-    // --- Aderência ---
     const handleToggleAderencia = (id) => { const novaLista = listaIndicadores.map(ind => { if (ind.id === id) return { ...ind, indicadorAderencia: !ind.indicadorAderencia }; return ind; }); setListaIndicadores(novaLista); };
     const handleSalvarAderencia = async (indicadorRow) => { try { const payload = prepararPayload(indicadorRow); await salvarIndicador(payload); alert('Aderência atualizada!'); carregarIndicadores(); } catch (error) { alert("Erro ao salvar aderência."); carregarIndicadores(); } };
 
@@ -128,10 +124,8 @@ function CadastroIndicadores() {
             const novaLista = listaIndicadores.map(ind => 
                 ind.id === indicadorRow.id ? { ...ind, bloquearAlteracaoDeValores: novoValor } : ind
             );
+            
             setListaIndicadores(novaLista);
-
-            // alert(`Alteração de valores ${novoValor ? 'bloqueada' : 'desbloqueada'}!`);
-
         } catch (error) {
             console.error("Erro ao alterar bloqueio:", error);
             alert("Erro ao alterar status de bloqueio.");
@@ -184,8 +178,8 @@ function CadastroIndicadores() {
             <main className='flex-grow-1'>
                 <div className="container mt-5 mb-5">
                     <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h3 className="fw-bold text-primary">Cadastro de Indicadores</h3>
-                        <button className="btn btn-warning fw-bold text-dark d-flex align-items-center" onClick={handleNovoIndicador}><FaPlus className="me-2" /> Novo Indicador</button>
+                        <h3 className="mb-0">Indicadores Cadastrados</h3>
+                        <button className="btn btn-primary" onClick={handleNovoIndicador}>Novo Indicador</button>
                     </div>
                     <div className="mb-4">
                         <Filtros onUnidadeChange={setFiltroUnidade} onAnoChange={setAnoSelecionado} setCarregandoFiltros={setCarregandoFiltros} />
@@ -452,7 +446,7 @@ function CadastroIndicadores() {
                                 <FaCalculator className="me-2" /> Montar Fórmula
                             </button>
                         )}
-                        <button type="button" className="btn btn-secondary" onClick={handleSalvar}>Salvar</button>
+                        <button type="button" className="btn btn-primary" onClick={handleSalvar}>Salvar</button>
                         <button type="button" className="btn btn-light border" onClick={() => setModalFormAberto(false)}>Voltar</button>
                     </div>
                 </form>

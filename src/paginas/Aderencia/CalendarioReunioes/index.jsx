@@ -169,9 +169,7 @@ function CalendarioReunioes() {
                 <div className="container mt-5 mb-3">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h3>Calendário de Reuniões de Aderência</h3>
-                        <button className="btn btn-primary d-flex align-items-center" onClick={abrirModalNovo}>
-                            <FaPlus className="me-2" /> Adicionar Reunião
-                        </button>
+                        <button className="btn btn-primary d-flex align-items-center" onClick={abrirModalNovo}>Adicionar Reunião</button>
                     </div>
 
                     <div className="card">

@@ -152,9 +152,9 @@ function TransferenciaValores() {
     };
 
     return (
-        <>
+        <div className='d-flex flex-column min-vh-100'>
             <Cabecalho />
-            <div className="container-fluid py-4">
+            <div className="container-fluid py-4 flex-grow-1">
                 <div className="row justify-content-center">
                     <div className="col-12 col-lg-8">
 
@@ -272,7 +272,7 @@ function TransferenciaValores() {
                                     <button
                                         onClick={handleSalvar}
                                         disabled={!deId || !paraId || !indicadorSelecionado}
-                                        className="btn btn-primary btn-md fw-semibold"
+                                        className="btn btn-primary"
                                         style={{
                                             backgroundColor: 'var(--azul-compesa)',
                                             borderColor: 'var(--azul-compesa)',
@@ -300,7 +300,7 @@ function TransferenciaValores() {
                 </div>
             </div>
             <Rodape />
-        </>
+        </div>
     );
 }
 

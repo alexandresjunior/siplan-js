@@ -10,9 +10,9 @@ const menuItems = [
         links: [
             { label: "Usuários", path: "/cadastros/usuarioscadastrados" },
             { label: "Indicadores", path: "/cadastros/indicadores" },
-            { label: "Valores dos Indicadores", path: "/cadastros/valores-indicadores" },
+            { label: "Valores dos Indicadores (TODO)", path: "/cadastros/valores-indicadores" },
             { label: "Transferência de Valores", path: "/cadastros/transferencia-valores" },
-            { label: "Ata de Reuniões", path: "/cadastros/ata-reunioes" },
+            { label: "Ata de Reuniões (TODO)", path: "/cadastros/ata-reunioes" },
             { label: "Comitês", path: "/cadastros/comites" },
             { label: "Objetivos", path: "/cadastros/objetivos" },
         ]
@@ -20,25 +20,25 @@ const menuItems = [
     {
         title: "Configurações",
         links: [
-            { label: "Importação de Dados", path: "/configuracoes/importacao-dados" },
-            { label: "Controle de Acesso", path: "/configuracoes/controle-acesso" },
-            { label: "PDF de Indicadores", path: "/configuracoes/pdf-indicadores" },
-            { label: "PDF de Pareto", path: "/configuracoes/pdf-pareto" },
-            { label: "Resumos do Ciclo", path: "/configuracoes/resumos-ciclo" },
+            { label: "Importação de Dados (TODO)", path: "/configuracoes/importacao-dados" },
+            { label: "Controle de Acesso (TODO)", path: "/configuracoes/controle-acesso" },
+            { label: "PDF de Indicadores (TODO)", path: "/configuracoes/pdf-indicadores" },
+            { label: "PDF de Pareto (TODO)", path: "/configuracoes/pdf-pareto" },
+            { label: "Resumos do Ciclo (TODO)", path: "/configuracoes/resumos-ciclo" },
             { label: "Lixeira de Indicadores", path: "/configuracoes/lixeira-indicadores" },
         ]
     },
     {
         title: "Análise",
         links: [
-            { label: "Indicadores", path: "/analise/indicadores" },
-            { label: "Pareto", path: "/analise/pareto" },
+            { label: "Indicadores (TODO)", path: "/analise/indicadores" },
+            { label: "Pareto (TODO)", path: "/analise/pareto" },
         ]
     },
     {
         title: "Aderência",
         links: [
-            { label: "Verificação", path: "/aderencia/verificacao" },
+            { label: "Verificação (TODO)", path: "/aderencia/verificacao" },
             { label: "Data de Fechamento", path: "/aderencia/data-fechamento" },
             { label: "Calendário de Reuniões", path: "/aderencia/calendario-reunioes" },
         ]

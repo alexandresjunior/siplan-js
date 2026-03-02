@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Cabecalho from "../../componentes/Cabecalho";
-import { Rodape } from "../../componentes/Rodape";
 import CartaoIndicador from "./CartaoIndicador";
 import MapaEstrategico from "./MapaEstrategico";
+import { Rodape } from "../../componentes/Rodape";
 import {
   buscarCartoes,
   separarCartoesPorTipo,
@@ -47,15 +47,14 @@ export function Dashboard() {
   const cicloAtual = calcularCicloAtual(cartoes);
 
   return (
-    <>
+    <div className='d-flex flex-column min-vh-100'>
       <Cabecalho />
-      <section className="container" id="dashboard">
+      <section className="container flex-grow-1" id="dashboard">
         <div className="pt-3 pb-5">
-          <h1 className="text-primary mb-5">
+          <h1 className="mt-3 mb-5">
             Plano de Metas ({cicloAtual})
           </h1>
 
-          {/* Abas */}
           <ul className="nav nav-tabs nav-fill mb-4" role="tablist">
             <li className="nav-item">
               <button
@@ -80,7 +79,7 @@ export function Dashboard() {
           <div className="tab-content">
             {(abaAtiva === 'mensal' || abaAtiva === 'acumulado') && (
               <div className="tab-pane fade show active">
-                <h2 className="text-primary mb-3">{tituloAba}</h2>
+                <h2 className="mb-3">{tituloAba}</h2>
 
                 {carregando ? (
                   <p className="text-center">Carregando...</p>
@@ -111,7 +110,7 @@ export function Dashboard() {
         </div>
       </section>
       <Rodape />
-    </>
+    </div>
   );
 }
 
