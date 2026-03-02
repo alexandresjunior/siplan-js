@@ -1,7 +1,7 @@
 import { FaCircleUser } from "react-icons/fa6";
 import logo from "../../assets/imagens/siplan_logo_azul.png";
 import { useNavigate, Link } from "react-router-dom";
-import loginService from "../../services/loginService";
+import loginService from "../../services/login";
 import './estilos.css';
 
 const menuItems = [
@@ -47,7 +47,7 @@ const menuItems = [
 
 export function Cabecalho() {
     const navigate = useNavigate();
-    const { logout } = loginService; //desestrutura função logout
+    const { logout } = loginService;
 
 
     const handleDropdownClick = (e) => e.preventDefault();

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { organogramaApi } from '../../mocks/organograma'; // Importando a API mock
+import { organogramaApi } from '../../mocks/organograma';
 import './estilos.css';
 
-const TIPO_COMITE = "COMITES"; // Constante para o tipo especial
+const TIPO_COMITE = "COMITES";
 
 const ElementoOrganizacionalMenu = ({
     organogramaSelecionado: initialAno,
@@ -14,7 +14,7 @@ const ElementoOrganizacionalMenu = ({
     onDiretoriaSelecionada,
 }) => {
 
-    // --- STATE MANAGEMENT (useState) ---
+    
     const [anoOrganogramas] = useState([2022, 2023, 2024, 2025]);
     const [diretorias, setDiretorias] = useState([]);
     const [elementosOrganizacionais, setElementosOrganizacionais] = useState([]);
@@ -25,20 +25,17 @@ const ElementoOrganizacionalMenu = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-    // --- SIDE EFFECTS (useEffect) ---
-
-    // Hook para implementar o debounce na busca (recria o debounceTime do RxJS)
     useEffect(() => {
         const timerId = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
-        }, 300); // Atraso de 300ms
+        }, 300);
 
         return () => {
-            clearTimeout(timerId); // Limpa o timeout se o usuário digitar novamente
+            clearTimeout(timerId);
         };
     }, [searchTerm]);
 
-    // Hook para buscar os elementos quando o termo de busca (após debounce) ou a diretoria mudam
+    
     useEffect(() => {
         if (!apenasEstrategicos && debouncedSearchTerm !== '' && diretoriaSelecionada) {
             const buscarElementos = async () => {
@@ -55,7 +52,7 @@ const ElementoOrganizacionalMenu = ({
         }
     }, [debouncedSearchTerm, diretoriaSelecionada, anoSelecionado, apenasEstrategicos]);
 
-    // Hook para buscar as diretorias quando o ano selecionado muda (efeito do ngOnInit e selecionarAnoOrganograma)
+    
     useEffect(() => {
         const buscarDiretorias = async () => {
             if (anoSelecionado) {
@@ -67,8 +64,6 @@ const ElementoOrganizacionalMenu = ({
         buscarDiretorias();
     }, [anoSelecionado]);
 
-
-    // --- EVENT HANDLERS ---
 
     const handleAnoChange = (e) => {
         const ano = Number(e.target.value);
@@ -91,23 +86,23 @@ const ElementoOrganizacionalMenu = ({
             const comites = await organogramaApi.obterComites();
             setElementosOrganizacionais(comites);
         } else if (apenasEstrategicos) {
-            onElementoSelecionado(diretoria); // Emite o evento direto se for estratégico
+            onElementoSelecionado(diretoria);
         } else {
-            setElementosOrganizacionais([]); // Limpa a lista para nova busca
+            setElementosOrganizacionais([]);
         }
     };
 
     const handleElementoClick = (elemento) => {
         onElementoSelecionado(elemento);
-        setDiretoriaSelecionada(elemento); // Atualiza o campo de busca
+        setDiretoriaSelecionada(elemento);
         setSearchTerm(elemento.descricao);
-        setElementosOrganizacionais([]); // Limpa a lista após a seleção
+        setElementosOrganizacionais([]);
     };
 
-    // --- RENDER (JSX) ---
+    
     return (
         <div className="p-3 border rounded bg-light">
-            {/* Seletor de Ano */}
+    
             <div className="mb-3">
                 <label htmlFor="ano-organograma" className="form-label">Ano Organograma</label>
                 <select id="ano-organograma" className="form-select" value={anoSelecionado?.toString() || ''} onChange={handleAnoChange}>
@@ -116,7 +111,7 @@ const ElementoOrganizacionalMenu = ({
                 </select>
             </div>
 
-            {/* Seletor de Diretoria */}
+    
             <div className="mb-3">
                 <label htmlFor="diretoria" className="form-label">Diretoria</label>
                 <select id="diretoria" className="form-select" value={diretoriaSelecionada?.id || ''} onChange={handleDiretoriaChange} disabled={!anoSelecionado}>
@@ -125,7 +120,7 @@ const ElementoOrganizacionalMenu = ({
                 </select>
             </div>
 
-            {/* Campo de Busca e Lista de Resultados */}
+    
             {!apenasEstrategicos && !filtroUsuario && (
                 <>
                     <div className="mb-3">
@@ -152,10 +147,10 @@ const ElementoOrganizacionalMenu = ({
                 </>
             )}
 
-            {/* Variação com Autocomplete (simplificado como a lista acima) */}
+    
             {filtroUsuario && (
                 <>
-                    {/* A implementação visual é a mesma do bloco acima, mas a lógica de exibição é controlada por 'filtroUsuario' */}
+    
                     <div className="mb-3">
                         <label htmlFor="search-input-user" className="form-label">Gerência, diretoria ou coordenação</label>
                         <input

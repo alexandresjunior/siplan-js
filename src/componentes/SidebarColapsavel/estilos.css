@@ -1,12 +1,11 @@
-/* Botão de Toggle */
+
 .btn-toggle-sidebar {
-    position: fixed; /* ou 'absolute' dependendo do seu layout */
+    position: fixed;
     top: 90px;
     left: 20px;
-    z-index: 1040; /* Acima da maioria dos conteúdos, abaixo do sidebar */
+    z-index: 1040;
 }
 
-/* Fundo escuro quando o menu está aberto */
 .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -18,24 +17,24 @@
     cursor: pointer;
 }
 
-/* O container da sidebar */
+
 .sidebar-wrapper {
     position: fixed;
     top: 0;
     left: 0;
-    width: 350px; /* Largura da sidebar */
+    width: 350px;
     height: 100vh;
     background-color: #fff;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 1042; /* Fica acima de tudo */
-    transform: translateX(-100%); /* Começa escondido à esquerda */
+    z-index: 1042;
+    transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
 }
 
 .sidebar-wrapper.open {
-    transform: translateX(0); /* Fica visível quando a classe 'open' é aplicada */
+    transform: translateX(0);
 }
 
 .sidebar-header {
@@ -48,19 +47,19 @@
 
 .sidebar-content {
     flex-grow: 1;
-    overflow-y: auto; /* Adiciona scroll se o conteúdo for grande */
+    overflow-y: auto;
     padding: 1rem;
 }
 
-/* Classe para empurrar o conteúdo principal quando a sidebar estiver aberta */
+
 .content-area {
     padding-left: 20px; /* Espaçamento inicial */
     transition: margin-left 0.3s ease-in-out;
 }
 
-/* Estilo para desktop, onde a sidebar empurra o conteúdo */
+
 @media (min-width: 992px) {
     .content-area-pushed {
-        margin-left: 350px; /* Mesmo valor da largura da sidebar */
+        margin-left: 350px;
     }
 }

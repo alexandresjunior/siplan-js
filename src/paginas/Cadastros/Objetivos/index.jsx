@@ -3,7 +3,7 @@ import Cabecalho from "../../../componentes/Cabecalho";
 import { Rodape } from "../../../componentes/Rodape";
 import Pagination from "../../../componentes/Pagination";
 import Modal from "../../../componentes/Modal";
-import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../services/objetivoService";
+import { buscarObjetivosPaginados, criarObjetivo, editarObjetivo, excluirObjetivo } from "../../../services/objetivo";
 
 import { FiEdit } from 'react-icons/fi';
 import { AiOutlineDelete } from 'react-icons/ai';
@@ -16,7 +16,7 @@ function Objetivos() {
     const [totalPaginas, definirTotalPaginas] = useState(0);
     const [totalElementos, definirTotalElementos] = useState(0);
     const [carregando, definirCarregando] = useState(true);
-
+    const [erroApi, setErroApi] = useState(null);
 
     const [exibirModalNovo, definirExibirModalNovo] = useState(false);
     const [exibirModalEditar, definirExibirModalEditar] = useState(false);
@@ -26,15 +26,25 @@ function Objetivos() {
     const [objetivoSelecionado, definirObjetivoSelecionado] = useState(null);
 
 
-    const recarregarObjetivos = () => {
-        buscarObjetivosPaginados(
-            definirCarregando,
-            definirObjetivos,
-            definirTotalPaginas,
-            definirTotalElementos,
-            paginaAtual,
-            tamanhoPagina
-        );
+    const recarregarObjetivos = async () => {
+        definirCarregando(true);
+        setErroApi(null);
+        try {
+            const dadosPaginados = await buscarObjetivosPaginados(paginaAtual, tamanhoPagina);
+
+            definirObjetivos(dadosPaginados.content);
+            definirTotalPaginas(dadosPaginados.totalPages);
+            definirTotalElementos(dadosPaginados.totalElements);
+
+        } catch (error) {
+            console.error("Erro no componente ao carregar objetivos:", error);
+            setErroApi(error.message || "Erro desconhecido ao carregar objetivos.");
+            definirObjetivos([]);
+            definirTotalPaginas(0);
+            definirTotalElementos(0);
+        } finally {
+            definirCarregando(false);
+        }
     };
 
     useEffect(() => {
@@ -43,7 +53,7 @@ function Objetivos() {
 
 
     const abrirModalNovo = () => {
-        definirObjetivoSelecionado({ nome: '', descricao: '' });
+        definirObjetivoSelecionado({ nome: '', descricao: '', dataCriacao: null });
         definirExibirModalNovo(true);
     };
 
@@ -68,34 +78,41 @@ function Objetivos() {
     const handleCriar = async () => {
         try {
             await criarObjetivo(objetivoSelecionado);
+            alert('Objetivo criado com sucesso!');
             fecharModais();
             recarregarObjetivos();
         } catch (error) {
             console.error(error);
-            alert('Erro ao criar objetivo.');
+            alert(`Erro ao criar objetivo: ${error.message}`);
         }
     };
 
     const handleEditar = async () => {
         try {
             await editarObjetivo(objetivoSelecionado);
+            alert('Objetivo atualizado com sucesso!');
             fecharModais();
             recarregarObjetivos();
         } catch (error) {
             console.error(error);
-            alert('Erro ao atualizar objetivo.');
+            alert(`Erro ao atualizar objetivo: ${error.message}`);
         }
     };
 
     const handleExcluir = async () => {
         try {
             await excluirObjetivo(objetivoSelecionado.id);
+            alert('Objetivo removido com sucesso!');
             fecharModais();
-            recarregarObjetivos();
-        } catch (error) {
+            if (objetivos.length === 1 && paginaAtual > 0) {
+              definirPaginaAtual(paginaAtual - 1);
+            } else {
+              recarregarObjetivos();
+            }
+          } catch (error) {
             console.error(error);
-            alert('Erro ao remover objetivo.');
-        }
+            alert(`Não foi possível excluir o objetivo. ${error}`);
+          }
     };
 
     const handleFormChange = (e) => {
@@ -114,15 +131,17 @@ function Objetivos() {
         return objetivos.map(objetivo => (
             <tr key={objetivo.id} className="border-bottom">
                 <td className="py-2 px-3">{objetivo.nome}</td>
-                <td className="py-2 px-3 text-center">{objetivo.dataCriacao}</td>
+                <td className="py-2 px-3 text-center">{objetivo.dataCriacao
+                    ? new Date(objetivo.dataCriacao).toLocaleDateString("pt-BR")
+                    : '---'}</td>
                 <td className="px-3 text-center">
                     <div className="dropdown">
                         <button type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: "1.5em", background: "none", border: "none" }}>
                             ⋮
                         </button>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(objetivo)}><FiEdit className="me-1"/> Editar</a></li>
-                            <li><button className="dropdown-item text-danger" onClick={() => abrirModalExcluir(objetivo)}><AiOutlineDelete className="me-1"/> Excluir</button></li>
+                            <li><a className="dropdown-item" href="#" onClick={() => abrirModalEditar(objetivo)}><FiEdit className="me-1" /> Editar</a></li>
+                            <li><button className="dropdown-item text-danger" onClick={() => abrirModalExcluir(objetivo)}><AiOutlineDelete className="me-1" /> Excluir</button></li>
                         </ul>
                     </div>
                 </td>
@@ -144,42 +163,44 @@ function Objetivos() {
     );
 
     return (
-        <>
+        <div className='d-flex flex-column min-vh-100'>
             <Cabecalho />
-            <div className="container mt-5 mb-3">
-                <div className="row mb-3">
-                    <div className="col">
-                        <h3 className="mb-0">Objetivos Estratégicos</h3>
+            <main className='flex-grow-1'>
+                <div className="container mt-5 mb-3">
+                    <div className="row mb-3">
+                        <div className="col">
+                            <h3 className="mb-0">Objetivos Estratégicos</h3>
+                        </div>
+                        <div className="col-auto">
+                            <button onClick={abrirModalNovo} className="btn btn-primary">Novo Objetivo</button>
+                        </div>
                     </div>
-                    <div className="col-auto">
-                        <button onClick={abrirModalNovo} className="btn btn-primary">Novo Objetivo</button>
+                    <div className="card">
+                        <div className="card-body">
+                            <table className="table table-striped">
+                                <thead>
+                                    <tr className="table-light">
+                                        <th className="p-3">Nome</th>
+                                        <th className="p-3" style={{ width: "15%" }}>Data de Criação</th>
+                                        <th className="p-3 text-center" style={{ width: "10%" }}>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{renderizarObjetivos()}</tbody>
+                            </table>
+                            <Pagination
+                                estilos="d-flex justify-content-between align-items-center mt-4"
+                                pagina={paginaAtual}
+                                definirPagina={definirPaginaAtual}
+                                tamanho={tamanhoPagina}
+                                definirTamanho={definirTamanhoPagina}
+                                totalPaginas={totalPaginas}
+                                totalElementos={totalElementos}
+                                opcoesPagina={[10, 20, 40]}
+                            />
+                        </div>
                     </div>
                 </div>
-                <div className="card">
-                    <div className="card-body">
-                        <table className="table table-striped">
-                            <thead>
-                                <tr className="table-light">
-                                    <th className="p-3">Nome</th>
-                                    <th className="p-3" style={{ width: "15%" }}>Data de Criação</th>
-                                    <th className="p-3 text-center" style={{ width: "10%" }}>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>{renderizarObjetivos()}</tbody>
-                        </table>
-                        <Pagination
-                            estilos="d-flex justify-content-between align-items-center mt-4"
-                            pagina={paginaAtual}
-                            definirPagina={definirPaginaAtual}
-                            tamanho={tamanhoPagina}
-                            definirTamanho={definirTamanhoPagina}
-                            totalPaginas={totalPaginas}
-                            totalElementos={totalElementos}
-                            opcoesPagina={[10, 20, 40]}
-                        />
-                    </div>
-                </div>
-            </div>
+            </main>
             <Rodape />
 
 
@@ -210,7 +231,7 @@ function Objetivos() {
                 <p>Você tem certeza que deseja remover o objetivo: <strong>{objetivoSelecionado?.nome}</strong>?</p>
                 <p>Esta ação não pode ser desfeita.</p>
             </Modal>
-        </>
+        </div>
     );
 }
 

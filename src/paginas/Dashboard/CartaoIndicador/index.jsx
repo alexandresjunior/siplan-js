@@ -27,7 +27,6 @@ const CartaoIndicador = ({ data }) => {
                 <div className="mb-3">
                     <div className="d-flex align-items-center mb-2">
                         <FaArrowCircleUp size={20} className="arrow-primary me-2" />
-                        {/* <FaArrowCircleDown size={20} className="arrow-primary me-2" /> */}
                         <h3 className="h5 text-primary mb-0">{titulo}</h3>
                     </div>
                     {subtitulo && <small className="text-muted">{subtitulo}</small>}

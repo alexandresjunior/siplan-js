@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token'); // Verifica o token no localStorage
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     if (!token) {
-      navigate('/'); // Redireciona para a rota raiz (Login) se não houver token
+      navigate('/');
     }
   }, [token, navigate]);
 
-  return token ? children : null; // Renderiza o conteúdo apenas se o token existir
+  return token ? children : null;
 };
 
 export default ProtectedRoute;
