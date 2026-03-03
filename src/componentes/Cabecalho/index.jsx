@@ -12,20 +12,24 @@ const menuItems = [
             { label: "Indicadores", path: "/cadastros/indicadores" },
             { label: "Valores dos Indicadores (TODO)", path: "/cadastros/valores-indicadores" },
             { label: "Transferência de Valores", path: "/cadastros/transferencia-valores" },
+            { label: "Importação de Dados (TODO)", path: "/cadastros/importacao-dados" },
             { label: "Ata de Reuniões (TODO)", path: "/cadastros/ata-reunioes" },
             { label: "Comitês", path: "/cadastros/comites" },
             { label: "Objetivos", path: "/cadastros/objetivos" },
+            { label: "Lixeira de Indicadores", path: "/cadastros/lixeira-indicadores" },
         ]
     },
+    // {
+    //     title: "Configurações",
+    //     links: [
+    //         { label: "Controle de Acesso (TODO)", path: "/configuracoes/controle-acesso" },
+    //     ]
+    // },
     {
-        title: "Configurações",
+        title: "Relatórios",
         links: [
-            { label: "Importação de Dados (TODO)", path: "/configuracoes/importacao-dados" },
-            { label: "Controle de Acesso (TODO)", path: "/configuracoes/controle-acesso" },
-            { label: "PDF de Indicadores (TODO)", path: "/configuracoes/pdf-indicadores" },
-            { label: "PDF de Pareto (TODO)", path: "/configuracoes/pdf-pareto" },
-            { label: "Resumos do Ciclo (TODO)", path: "/configuracoes/resumos-ciclo" },
-            { label: "Lixeira de Indicadores", path: "/configuracoes/lixeira-indicadores" },
+            { label: "Indicadores (TODO)", path: "/relatorios/indicadores" },
+            { label: "Pareto (TODO)", path: "/relatorios/pareto" },
         ]
     },
     {
